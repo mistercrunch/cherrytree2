@@ -1,0 +1,356 @@
+release_branch:
+  minor_version: '6.0'
+  branch_name: '6.0'
+  base_sha: 1f482b42
+  base_date: 2025-08-18 14:04:26 -0700
+  targeted_prs:
+  - pr_number: 34871
+    title: 'fix(tests): Mock MessageChannel to prevent Jest hanging from rc-overflow'
+    master_sha: 836540e8c9
+    author: sadpandajoe
+    is_merged: true
+  - pr_number: 34855
+    title: 'fix: Remove the underline from the right section of main menu'
+    master_sha: b74a244950
+    author: kgabryje
+    is_merged: true
+  - pr_number: 34854
+    title: 'fix: DB icon sizes in database add modal'
+    master_sha: ab58b0a8a3
+    author: kgabryje
+    is_merged: true
+  - pr_number: 34843
+    title: 'fix(dashboard): Anchor link positions'
+    master_sha: 97b35a4640
+    author: kgabryje
+    is_merged: true
+  - pr_number: 34846
+    title: 'fix(sqllab): Missing executed sql value in the result table'
+    master_sha: b89b0bdf5d
+    author: justinpark
+    is_merged: true
+  - pr_number: 34665
+    title: 'fix: Avoid dataset drill request if no perm'
+    master_sha: 9c9588cce6
+    author: Vitor-Avila
+    is_merged: true
+  - pr_number: 34782
+    title: 'fix: Add dataset ID to file name on exports'
+    master_sha: 471d9fe737
+    author: Vitor-Avila
+    is_merged: true
+  - pr_number: 34795
+    title: 'fix(theming): explore chart type style fixes, nav right menu spacing fixed'
+    master_sha: b381992a75
+    author: rebenitez1802
+    is_merged: true
+  - pr_number: 34801
+    title: 'fix: make `get_image()` always return `BytesIO`'
+    master_sha: 1204507d68
+    author: betodealmeida
+    is_merged: true
+  - pr_number: 34798
+    title: 'fix: Unexpected overflow ellipsis dots after status icon in Dashboard
+      list'
+    master_sha: b225432c55
+    author: kgabryje
+    is_merged: true
+  - pr_number: 34815
+    title: 'fix(echarts): Series labels hard to read in dark mode'
+    master_sha: 547f297171
+    author: kgabryje
+    is_merged: true
+  - pr_number: 34809
+    title: 'fix(Icons): Add missing data-test and aria-label attributes to   custom
+      icons'
+    master_sha: 5c3c2599db
+    author: sadpandajoe
+    is_merged: true
+  - pr_number: 34790
+    title: 'fix(DetailsPanel): Applied filters colors'
+    master_sha: 2b2cc96f11
+    author: msyavuz
+    is_merged: true
+  - pr_number: 34812
+    title: 'fix(native-filters): Low contrast of empty state in dark mode'
+    master_sha: 59c01e016d
+    author: kgabryje
+    is_merged: true
+  - pr_number: 34811
+    title: 'fix: Low contrast in viz creator selected tag in dark mode'
+    master_sha: 3895b8b127
+    author: kgabryje
+    is_merged: true
+  - pr_number: 34814
+    title: 'fix: Remove border around textarea in dashboard edit mode'
+    master_sha: da8c0f94e6
+    author: kgabryje
+    is_merged: true
+  - pr_number: 34799
+    title: 'fix: Misaligned global controls in Table chart'
+    master_sha: 6908a733a0
+    author: kgabryje
+    is_merged: true
+  - pr_number: 34777
+    title: 'fix(dashboard): enable undo/redo buttons for layout changes'
+    master_sha: ff1f7b64e2
+    author: gabotorresruiz
+    is_merged: true
+  - pr_number: 34679
+    title: 'fix: Check migration status before initializing database-dependent features'
+    master_sha: c568d463b9
+    author: mistercrunch
+    is_merged: true
+  - pr_number: 34719
+    title: 'fix: default value in run-server.sh'
+    master_sha: 179a6f2cfe
+    author: prochac
+    is_merged: true
+  - pr_number: 34793
+    title: 'fix(PivotExcelExport): select correct chart for export'
+    master_sha: e908775fb2
+    author: msyavuz
+    is_merged: true
+  - pr_number: 34780
+    title: 'fix(tests): make SingleStore test_adjust_engine_params version-agnostic'
+    master_sha: af05396227
+    author: sadpandajoe
+    is_merged: true
+  - pr_number: 34791
+    title: 'fix(webpack): Bump webpack dev-server to handle Errors on Firefox where
+      error object is not defined'
+    master_sha: 277f03c207
+    author: amaannawab923
+    is_merged: true
+  - pr_number: 34765
+    title: 'fix(sqllab): Fix save query modal closing prematurely on new tabs'
+    master_sha: 48699a7194
+    author: rusackas
+    is_merged: true
+  - pr_number: 34051
+    title: 'fix(translations): Fix translation of time-related strings like "7 seconds
+      ago", "a minute ago", etc'
+    master_sha: b45141b2a1
+    author: PolinaFam
+    is_merged: true
+  - pr_number: 34769
+    title: 'fix: Fix TypeError in Slice.get() method when using filter_by() with BinaryExpression'
+    master_sha: 9de1706baa
+    author: sadpandajoe
+    is_merged: true
+  - pr_number: 34743
+    title: 'fix(duckdb): Add support for DuckDB-specific numeric types'
+    master_sha: a42185cd3b
+    author: rusackas
+    is_merged: true
+  - pr_number: 34683
+    title: 'fix(sqllab): Invisible grid table due to the invalid height'
+    master_sha: 89eb7b207c
+    author: justinpark
+    is_merged: true
+  - pr_number: 34757
+    title: 'fix: Users can''t skip column sync when saving virtual datasets'
+    master_sha: f99022b242
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 34720
+    title: 'fix(sqllab): Reduce flushing caused by ID updates'
+    master_sha: f8b9e3ace4
+    author: justinpark
+    is_merged: true
+  - pr_number: 34758
+    title: 'fix(saved_query): Copy link to clipboard before redirect to edit (#34567)'
+    master_sha: 9cbe5a90b8
+    author: justinpark
+    is_merged: true
+  - pr_number: 34756
+    title: 'fix(RightMenu): Move RightMenu carets to the right side'
+    master_sha: f7fe617f4c
+    author: msyavuz
+    is_merged: true
+  - pr_number: 34705
+    title: 'fix: Highlight outline of numerical range and time range filters'
+    master_sha: 6969f2cf7a
+    author: kgabryje
+    is_merged: true
+  - pr_number: 34850
+    title: 'fix: complete theme management system import/export'
+    master_sha: ''
+    author: mistercrunch
+    is_merged: false
+  - pr_number: 34781
+    title: 'fix(sqllab): autocomplete and delete tabs'
+    master_sha: ''
+    author: justinpark
+    is_merged: false
+  commits_in_branch:
+  - sha: 160a8fe16c
+    message: 'fix(tests): Mock MessageChannel to prevent Jest hanging from rc-overflow
+      (#34871)'
+    date: 2025-08-27 23:19:01 -0700
+    pr_number: 34871
+  - sha: fc80861f47
+    message: 'fix: Remove the underline from the right section of main menu (#34855)'
+    date: 2025-08-27 12:01:38 -0700
+    pr_number: 34855
+  - sha: 7169d9f2bd
+    message: 'fix: DB icon sizes in database add modal (#34854)'
+    date: 2025-08-27 12:00:55 -0700
+    pr_number: 34854
+  - sha: 37347525e7
+    message: 'fix(dashboard): Anchor link positions (#34843)'
+    date: 2025-08-27 12:00:10 -0700
+    pr_number: 34843
+  - sha: b6aa68dbfc
+    message: 'fix(sqllab): Missing executed sql value in the result table (#34846)'
+    date: 2025-08-27 11:58:49 -0700
+    pr_number: 34846
+  - sha: e4f371b126
+    message: 'fix: Avoid dataset drill request if no perm (#34665)'
+    date: 2025-08-27 11:58:18 -0700
+    pr_number: 34665
+  - sha: d0d816047c
+    message: 'fix: Add dataset ID to file name on exports (#34782)'
+    date: 2025-08-27 11:57:07 -0700
+    pr_number: 34782
+  - sha: 2e28e22596
+    message: 'fix(theming): explore chart type style fixes, nav right menu spacing
+      fixed (#34795)'
+    date: 2025-08-25 10:24:11 -0700
+    pr_number: 34795
+  - sha: a475d68693
+    message: 'fix: make `get_image()` always return `BytesIO` (#34801)'
+    date: 2025-08-25 10:23:57 -0700
+    pr_number: 34801
+  - sha: dfd36f5a54
+    message: 'chore: Add instruction for LLMs to use antd theme tokens (#34800)'
+    date: 2025-08-25 10:23:40 -0700
+    pr_number: 34800
+  - sha: ea5ebd2ec9
+    message: 'fix: Unexpected overflow ellipsis dots after status icon in Dashboard
+      list (#34798)'
+    date: 2025-08-25 10:23:27 -0700
+    pr_number: 34798
+  - sha: d454a22f1c
+    message: 'fix(echarts): Series labels hard to read in dark mode (#34815)'
+    date: 2025-08-25 10:23:14 -0700
+    pr_number: 34815
+  - sha: d01934d9d8
+    message: 'fix(Icons): Add missing data-test and aria-label attributes to   custom
+      icons (#34809)'
+    date: 2025-08-25 10:22:58 -0700
+    pr_number: 34809
+  - sha: 25775504b9
+    message: 'fix: User-provided Jinja template parameters causing SQL parsing errors
+      (#34802)'
+    date: 2025-08-23 11:17:15 -0700
+    pr_number: 34802
+  - sha: 4cc6984ebf
+    message: 'fix: customize column description limit size in db_engine_spec (#34808)'
+    date: 2025-08-23 11:16:43 -0700
+    pr_number: 34808
+  - sha: 548d9e6f7b
+    message: 'fix(DetailsPanel): Applied filters colors (#34790)'
+    date: 2025-08-23 11:15:57 -0700
+    pr_number: 34790
+  - sha: 1adaf20ccb
+    message: 'fix(native-filters): Low contrast of empty state in dark mode (#34812)'
+    date: 2025-08-23 11:15:20 -0700
+    pr_number: 34812
+  - sha: 7e9658fad6
+    message: 'fix: Low contrast in viz creator selected tag in dark mode (#34811)'
+    date: 2025-08-23 11:14:53 -0700
+    pr_number: 34811
+  - sha: 5ff6679804
+    message: 'fix: Remove border around textarea in dashboard edit mode (#34814)'
+    date: 2025-08-23 11:14:25 -0700
+    pr_number: 34814
+  - sha: 0899496ca5
+    message: 'fix: Misaligned global controls in Table chart (#34799)'
+    date: 2025-08-23 11:13:35 -0700
+    pr_number: 34799
+  - sha: e2a469c32d
+    message: 'fix(dashboard): enable undo/redo buttons for layout changes (#34777)'
+    date: 2025-08-23 11:11:46 -0700
+    pr_number: 34777
+  - sha: 2ffc1b95ba
+    message: 'fix: Check migration status before initializing database-dependent features
+      (#34679)'
+    date: 2025-08-21 14:05:27 -0700
+    pr_number: 34679
+  - sha: 3b3aa1e302
+    message: 'fix: default value in run-server.sh (#34719)'
+    date: 2025-08-21 14:04:59 -0700
+    pr_number: 34719
+  - sha: 958b29acbc
+    message: 'fix: catch no table error (#32640)'
+    date: 2025-08-21 14:04:08 -0700
+    pr_number: 32640
+  - sha: f0cfd17dc5
+    message: 'fix(PivotExcelExport): select correct chart for export (#34793)'
+    date: 2025-08-21 14:03:38 -0700
+    pr_number: 34793
+  - sha: ebfddb2b39
+    message: 'fix(tests): make SingleStore test_adjust_engine_params version-agnostic
+      (#34780)'
+    date: 2025-08-21 09:43:34 -0700
+    pr_number: 34780
+  - sha: e10b6e8ae9
+    message: 'fix(webpack): Bump webpack dev-server to handle Errors on Firefox where
+      error object is not defined (#34791)'
+    date: 2025-08-21 09:42:35 -0700
+    pr_number: 34791
+  - sha: 18d4acdee9
+    message: 'fix(sqllab): Fix save query modal closing prematurely on new tabs (#34765)'
+    date: 2025-08-21 09:41:48 -0700
+    pr_number: 34765
+  - sha: c199213e8e
+    message: 'fix(translations): Fix translation of time-related strings like "7 seconds
+      ago", "a minute ago", etc (#34051)'
+    date: 2025-08-21 09:40:38 -0700
+    pr_number: 34051
+  - sha: 91834bbede
+    message: 'fix: Fix TypeError in Slice.get() method when using filter_by() with
+      BinaryExpression (#34769)'
+    date: 2025-08-20 11:24:12 -0700
+    pr_number: 34769
+  - sha: 7253c79959
+    message: 'fix(duckdb): Add support for DuckDB-specific numeric types (#34743)'
+    date: 2025-08-20 11:04:06 -0700
+    pr_number: 34743
+  - sha: 04738c716c
+    message: 'fix(sqllab): Invisible grid table due to the invalid height (#34683)'
+    date: 2025-08-20 11:03:42 -0700
+    pr_number: 34683
+  - sha: 928dbe43e0
+    message: 'fix: Users can''t skip column sync when saving virtual datasets (#34757)'
+    date: 2025-08-19 09:51:22 -0700
+    pr_number: 34757
+  - sha: 3f597a6551
+    message: 'fix(sqllab): Reduce flushing caused by ID updates (#34720)'
+    date: 2025-08-19 09:50:52 -0700
+    pr_number: 34720
+  - sha: 3661482eb3
+    message: 'chore(saved_query): Copy link to clipboard before redirect to edit (#34567)
+      (#34758)'
+    date: 2025-08-19 09:50:25 -0700
+    pr_number: 34567
+  - sha: 9443fe8b78
+    message: 'fix(RightMenu): Move RightMenu carets to the right side (#34756)'
+    date: 2025-08-19 09:50:02 -0700
+    pr_number: 34756
+  - sha: 453241eb33
+    message: 'fix: Highlight outline of numerical range and time range filters (#34705)'
+    date: 2025-08-19 09:49:32 -0700
+    pr_number: 34705
+  - sha: a5f7d236ac
+    message: 'chore: Adds RC1 data to CHANGELOG.md and UPDATING.md'
+    date: 2025-08-18 14:38:54 -0700
+    pr_number: null
+  micro_releases:
+  - version: 6.0.0rc1
+    tag_sha: a5f7d236
+    tag_date: 2025-08-18 14:38:54 -0700
+    commit_date: 2025-08-18 14:38:54 -0700
+  last_synced: '2025-08-28T01:26:53.647481'
+  synced_from_repo: apache/superset
