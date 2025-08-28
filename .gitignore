@@ -147,3 +147,4 @@ cython_debug/
 # Showtime specific
 .showtime/
 config.yml
+CLAUDE.local.md

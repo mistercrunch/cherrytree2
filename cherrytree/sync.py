@@ -14,6 +14,7 @@ from github import Github
 from rich.console import Console
 
 from .git_parser import build_pr_sha_mapping, get_release_tags
+from .git_utils import GitError, run_git_command
 
 console = Console()
 
@@ -55,9 +56,6 @@ class ReleaseBranchState:
     synced_from_repo: str
 
 
-from .git_utils import GitError, run_git_command
-
-
 class GitHubError(Exception):
     """GitHub API operation failed."""
 
@@ -70,7 +68,9 @@ def run_gh_command(args: List[str]) -> str:
         result = subprocess.run(["gh"] + args, capture_output=True, text=True, check=True)
         return result.stdout.strip()
     except subprocess.CalledProcessError as e:
-        raise GitHubError(f"GitHub CLI command failed: gh {' '.join(args)}\nError: {e.stderr}")
+        raise GitHubError(
+            f"GitHub CLI command failed: gh {' '.join(args)}\nError: {e.stderr}"
+        ) from e
 
 
 def check_branch_exists(repo_path: Path, branch: str) -> bool:
@@ -122,7 +122,7 @@ def get_merge_base(repo_path: Path, branch: str) -> tuple[str, str]:
                 console.print(
                     f"[yellow]Run manually: git checkout -b {branch} origin/{branch}[/yellow]"
                 )
-                raise typer.Exit(1)
+                raise typer.Exit(1) from None
         else:
             # Show available remote branches
             try:
@@ -143,10 +143,10 @@ def get_merge_base(repo_path: Path, branch: str) -> tuple[str, str]:
                     )
                 else:
                     console.print("[yellow]No release branches found.[/yellow]")
-                raise typer.Exit(1)
+                raise typer.Exit(1) from None
             except GitError:
                 console.print(f"[red]Error: Branch {branch} not found.[/red]")
-                raise typer.Exit(1)
+                raise typer.Exit(1) from None
 
     # Get merge-base and abbreviate to 8 digits
     full_base_sha = run_git_command(["merge-base", "master", branch], repo_path)
@@ -201,7 +201,7 @@ def get_github_token() -> str:
             console.print("[red]Error: No GitHub authentication found[/red]")
             console.print("Run: gh auth login")
             console.print("Or set GITHUB_TOKEN environment variable")
-            raise typer.Exit(1)
+            raise typer.Exit(1) from None
         return token
 
 
@@ -264,7 +264,7 @@ def get_labeled_prs(github_repo: str, label: str) -> List[PRInfo]:
         return prs
 
     except Exception as e:
-        raise GitHubError(f"Failed to query GitHub API: {e}")
+        raise GitHubError(f"Failed to query GitHub API: {e}") from e
 
 
 def build_release_state(
@@ -404,7 +404,7 @@ def check_gh_auth() -> None:
     except GitHubError:
         console.print("[red]Error: GitHub CLI not authenticated[/red]")
         console.print("Run: gh auth login")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
 
 
 def sync_command(
@@ -422,16 +422,16 @@ def sync_command(
         console.print("[red]Error: --repo path is required[/red]")
         console.print("Set with: cherrytree config set-repo /path/to/superset")
         console.print("Or use: cherrytree sync 5.0 --repo /path/to/superset")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
 
     repo_path_obj = Path(repo_path).resolve()
     if not repo_path_obj.exists():
         console.print(f"[red]Error: Repository path does not exist: {repo_path_obj}[/red]")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
 
     if not (repo_path_obj / ".git").exists():
         console.print(f"[red]Error: Not a git repository: {repo_path_obj}[/red]")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
 
     try:
         # Check GitHub CLI authentication before starting
@@ -471,7 +471,7 @@ def sync_command(
 
     except (GitError, GitHubError) as e:
         console.print(f"[red]Error: {e}[/red]")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
     except Exception as e:
         console.print(f"[red]Unexpected error: {e}[/red]")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None

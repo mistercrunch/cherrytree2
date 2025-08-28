@@ -106,7 +106,7 @@ def display_minor_status(
                     )
                     count = int(commit_count_output.strip())
                     commit_count = f"{count} 🍒" if count > 0 else "0"
-                except:
+                except Exception:
                     commit_count = "?"
             else:
                 commit_count = "? (no repo path)"

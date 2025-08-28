@@ -145,7 +145,7 @@ def build_pr_sha_mapping(
     # Only show missing PRs if there are many (might indicate a real problem)
     missing_prs = target_pr_set - set(pr_to_sha.keys())
     if len(missing_prs) > len(target_pr_numbers) * 0.1:  # More than 10% missing
-        missing_list = sorted(list(missing_prs))[:5]  # Show first 5
+        missing_list = sorted(missing_prs)[:5]  # Show first 5
         more_text = f" and {len(missing_prs) - 5} more" if len(missing_prs) > 5 else ""
         console.print(f"[yellow]Many PRs without SHAs: {missing_list}{more_text}[/yellow]")
         console.print("[yellow](This might indicate closed/abandoned PRs)[/yellow]")

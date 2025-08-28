@@ -18,4 +18,4 @@ def run_git_command(args: list, repo_path: Path) -> str:
         )
         return result.stdout.strip()
     except subprocess.CalledProcessError as e:
-        raise GitError(f"Git command failed: git {' '.join(args)}\nError: {e.stderr}")
+        raise GitError(f"Git command failed: git {' '.join(args)}\nError: {e.stderr}") from e
