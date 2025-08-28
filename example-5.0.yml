@@ -1,0 +1,45 @@
+# Example output of `cherrytree sync 5.0` - Complete release branch state
+
+release_branch:
+  minor_version: '5.0'
+  branch_name: '5.0'
+  base_sha: 'a1b2c3d4'  # 8-digit abbreviated SHA
+  base_date: '2024-08-15 10:30:00 -0700'
+
+  # PRs targeted for this release (open or merged, excludes abandoned)
+  targeted_prs:
+  - pr_number: 12345
+    title: 'Fix dashboard loading bug'
+    master_sha: 'e5f6g7h8'  # 8-digit SHA
+    author: 'developer@superset.org'
+    is_merged: true  # Ready for cherry-picking
+
+  - pr_number: 12346
+    title: 'Add new chart type'
+    master_sha: ''  # No SHA yet, not merged
+    author: 'contributor@superset.org'
+    is_merged: false  # Needs to be merged first
+
+  - pr_number: 12347
+    title: 'Security patch for authentication'
+    master_sha: 'm3n4o5p6'  # 8-digit SHA
+    author: 'security@superset.org'
+    is_merged: true  # Ready for cherry-picking
+
+  # Note: Abandoned PRs (closed without merge) are filtered out
+
+  # All commits currently in the 5.0 branch (cherry-picked from master)
+  commits_in_branch:
+  - sha: 'y5z6a7b8'  # 8-digit SHA
+    message: 'Initial 5.0.0 release'
+    date: '2024-08-20 12:00:00 -0700'
+    pr_number: null
+
+  - sha: 'u1v2w3x4'  # 8-digit SHA
+    message: 'Add new chart type (#12346)'
+    date: '2024-09-05 15:30:00 -0700'
+    pr_number: 12346
+
+  # Metadata
+  last_synced: '2024-09-15T10:00:00'
+  synced_from_repo: 'apache/superset'

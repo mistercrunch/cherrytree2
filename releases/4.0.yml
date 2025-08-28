@@ -1,0 +1,1745 @@
+release_branch:
+  minor_version: '4.0'
+  branch_name: '4.0'
+  base_sha: e0f4f34f
+  base_date: 2024-02-20 10:04:00 -0500
+  targeted_prs:
+  - pr_number: 30564
+    title: 'fix: Incorrect type in config.py'
+    master_sha: 7a8e8f890f
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 30560
+    title: 'fix: Unable to parse escaped tables'
+    master_sha: fc857d987b
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 30502
+    title: 'fix: Open control with Simple tab selected when there is no column selected'
+    master_sha: 03146b21be
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 30389
+    title: 'fix: Pre-query normalization with custom SQL'
+    master_sha: ad2998598f
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 30171
+    title: 'fix(sqllab): Skip AceEditor in inactive tabs'
+    master_sha: 4d1db9e32c
+    author: justinpark
+    is_merged: true
+  - pr_number: 30164
+    title: 'fix(native filter): undefined layout type on filterInScope'
+    master_sha: e02b18c63c
+    author: justinpark
+    is_merged: true
+  - pr_number: 30154
+    title: 'fix(sqllab): race condition when updating cursor position'
+    master_sha: 2097b716f4
+    author: justinpark
+    is_merged: true
+  - pr_number: 29978
+    title: 'fix(sqllab): flaky json explore modal due to shallow equality checks for
+      extra data'
+    master_sha: 1ca5947a7d
+    author: justinpark
+    is_merged: true
+  - pr_number: 29648
+    title: 'fix: Layout of native filters modal with lengthy columns'
+    master_sha: be833dce4f
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 29647
+    title: 'fix: Loading of native filter column'
+    master_sha: 92537f1fd5
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 29643
+    title: 'fix: Required native filter message wrongfully appearing'
+    master_sha: 9487d6c9d6
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 29607
+    title: 'fix(sqllab): Show warning message when deprecated db is selected'
+    master_sha: db3fa8df77
+    author: justinpark
+    is_merged: true
+  - pr_number: 29456
+    title: 'fix: Dashboard hangs when initial filters cannot be loaded'
+    master_sha: 35da6ac270
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 29420
+    title: 'fix: SQL label missing for non-group-by queries'
+    master_sha: 179cf269c6
+    author: hexcafe
+    is_merged: true
+  - pr_number: 29367
+    title: 'fix(explore): don''t respect y-axis formatting'
+    master_sha: 58f33d227a
+    author: justinpark
+    is_merged: true
+  - pr_number: 29345
+    title: 'fix(revert 27883): Excess padding in horizontal Bar charts'
+    master_sha: 708afb7146
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 29360
+    title: 'chore: Rename Totals to Summary in table chart'
+    master_sha: 213fd69b2b
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 29349
+    title: 'fix(explore): restored hidden field values has discarded'
+    master_sha: 160cece017
+    author: justinpark
+    is_merged: true
+  - pr_number: 29346
+    title: 'fix: Cannot delete empty column inside a tab using the dashboard editor'
+    master_sha: ee5227733b
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 29314
+    title: 'fix: Remove recursive repr call'
+    master_sha: 9444c6bd4b
+    author: jessie-ross
+    is_merged: true
+  - pr_number: 29301
+    title: 'fix(metastore-cache): prune before add'
+    master_sha: 172ddb47d5
+    author: villebro
+    is_merged: true
+  - pr_number: 29278
+    title: 'fix(sqllab): invalid empty state on switch tab'
+    master_sha: 725afc3848
+    author: justinpark
+    is_merged: true
+  - pr_number: 29291
+    title: 'fix: filters not updating with force update when caching is enabled'
+    master_sha: 527f1d20ad
+    author: ka-weihe
+    is_merged: true
+  - pr_number: 28744
+    title: 'fix(permalink): adding anchor to dashboard permalink generation'
+    master_sha: 914ebd9ba3
+    author: fisjac
+    is_merged: true
+  - pr_number: 29260
+    title: 'fix: Custom SQL filter control'
+    master_sha: 16c449748a
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 29249
+    title: 'test(Explorer): Fix minor errors in ExploreViewContainer syntax, add tests'
+    master_sha: 2418efe85c
+    author: rtexelm
+    is_merged: true
+  - pr_number: 29248
+    title: 'fix(sqllab): Do not strip comments when executing SQL statements'
+    master_sha: b50e3af07c
+    author: john-bodley
+    is_merged: true
+  - pr_number: 28876
+    title: 'chore(sqllab): Add logging for actions'
+    master_sha: 05829cbda9
+    author: justinpark
+    is_merged: true
+  - pr_number: 29234
+    title: 'fix(Explore): Keep necessary form data to allow query mode switching'
+    master_sha: 0dc9215c89
+    author: rtexelm
+    is_merged: true
+  - pr_number: 28755
+    title: 'fix: Workaround for Pandas.DataFrame.to_csv bug'
+    master_sha: 6b016da185
+    author: john-bodley
+    is_merged: true
+  - pr_number: 29230
+    title: 'fix(sqllab): run previous state query'
+    master_sha: a88979631e
+    author: justinpark
+    is_merged: true
+  - pr_number: 29119
+    title: 'fix(mixed-timeseries-plugin): Second query stacks stacked on top of first
+      query series'
+    master_sha: 68fd189586
+    author: kgabryje
+    is_merged: true
+  - pr_number: 28932
+    title: 'fix(embedded): add missing GUEST_TOKEN_HEADER_NAME to bootstrap data'
+    master_sha: 5c9a79442c
+    author: hexcafe
+    is_merged: true
+  - pr_number: 29084
+    title: 'fix: Remove BASE_AXIS from pre-query'
+    master_sha: 17d7e7e5e1
+    author: john-bodley
+    is_merged: true
+  - pr_number: 29081
+    title: 'fix(explore): Drill to detail truncates int64 IDs'
+    master_sha: dabb4e064f
+    author: justinpark
+    is_merged: true
+  - pr_number: 28771
+    title: 'fix(Mixed Chart Filter Control): Allow delete condition for `adhoc_filters_b`'
+    master_sha: 35e1820f8a
+    author: rtexelm
+    is_merged: true
+  - pr_number: 28772
+    title: 'fix(dashboard): unable to resize due to the overlapped droptarget'
+    master_sha: ce568c34f9
+    author: justinpark
+    is_merged: true
+  - pr_number: 28750
+    title: 'fix: do not close database modal on mask click'
+    master_sha: cbd3fa2190
+    author: eschutho
+    is_merged: true
+  - pr_number: 28745
+    title: 'fix(reports): Update the element class to wait for when taking a screenshot'
+    master_sha: 020c79970f
+    author: Vitor-Avila
+    is_merged: true
+  - pr_number: 28749
+    title: 'fix(sqllab): Sort db selector options by the API order'
+    master_sha: 453a645356
+    author: justinpark
+    is_merged: true
+  - pr_number: 28639
+    title: 'fix: adds the ability to disallow SQL functions per engine'
+    master_sha: 5dfbab5424
+    author: dpgaspar
+    is_merged: true
+  - pr_number: 28653
+    title: 'fix: Handling of column types for Presto, Trino, et al.'
+    master_sha: 4ff17409ab
+    author: john-bodley
+    is_merged: true
+  - pr_number: 28613
+    title: 'fix: revert fix(presto preview): re-enable schema previsualization for
+      Trino/Presto table/schemas"'
+    master_sha: 4fa7619b1f
+    author: john-bodley
+    is_merged: true
+  - pr_number: 28349
+    title: 'fix: Add back description column to saved queries #12431'
+    master_sha: c51ca98e14
+    author: imancrsrk
+    is_merged: true
+  - pr_number: 28567
+    title: 'fix: Revert "fix: don''t strip SQL comments in Explore (#28363)"'
+    master_sha: c9aa4a1f84
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 28555
+    title: 'fix(explore): hide a control wrapped with StashFormDataContainer correctly'
+    master_sha: 956511f7ef
+    author: justinpark
+    is_merged: true
+  - pr_number: 28512
+    title: 'fix: improve df to records performance'
+    master_sha: 11164e2450
+    author: dpgaspar
+    is_merged: true
+  - pr_number: 28507
+    title: 'fix(dashboard): invalid drop item on a tab'
+    master_sha: 65e0d54fa5
+    author: justinpark
+    is_merged: true
+  - pr_number: 28432
+    title: 'fix: Time shifts calculation for ECharts plugins'
+    master_sha: 821c7d7f2c
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 26782
+    title: 'fix(presto preview): re-enable schema previsualization for Trino/Presto
+      table/schemas'
+    master_sha: afdf0389a3
+    author: brouberol
+    is_merged: true
+  - pr_number: 28422
+    title: 'fix: Update migration logic in #27119'
+    master_sha: 1ccbc655eb
+    author: john-bodley
+    is_merged: true
+  - pr_number: 28409
+    title: 'fix(ar-modal): updateNotificationSettings not updating state'
+    master_sha: d871b4d267
+    author: fisjac
+    is_merged: true
+  - pr_number: 28395
+    title: 'fix(dashboard): Change class name on last Droppable in a column'
+    master_sha: b0157649af
+    author: rtexelm
+    is_merged: true
+  - pr_number: 28396
+    title: 'fix: type annotation breaking on py3.9'
+    master_sha: b224b8331a
+    author: dpgaspar
+    is_merged: true
+  - pr_number: 28312
+    title: 'fix(explore): hide advanced analytics for non temporal xaxis'
+    master_sha: 07cd1d89d0
+    author: justinpark
+    is_merged: true
+  - pr_number: 28368
+    title: 'fix: Contribution percentages for ECharts plugins'
+    master_sha: 55f3b46f41
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 28386
+    title: 'fix: Scroll to top when selecting a global dashboard tab'
+    master_sha: 9e4ba6762f
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 28363
+    title: 'fix: don''t strip SQL comments in Explore'
+    master_sha: c618767c6b
+    author: mistercrunch
+    is_merged: true
+  - pr_number: 28341
+    title: 'fix: Remedy logic for UpdateDatasetCommand uniqueness check'
+    master_sha: 467e612533
+    author: john-bodley
+    is_merged: true
+  - pr_number: 28334
+    title: 'fix: Small tweaks for Line and Area chart migrations (ECharts)'
+    master_sha: b4ab36a6a5
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 28266
+    title: 'fix: use pessimistic json encoder in SQL Lab'
+    master_sha: c10cee3a39
+    author: mistercrunch
+    is_merged: true
+  - pr_number: 28113
+    title: 'fix: Rename legacy line and area charts'
+    master_sha: b4c4ab7790
+    author: john-bodley
+    is_merged: true
+  - pr_number: 28279
+    title: 'fix(sql_parse): Ignore USE SQL keyword when determining SELECT statement'
+    master_sha: 27952e7057
+    author: john-bodley
+    is_merged: true
+  - pr_number: 28322
+    title: 'fix(sql_parse): Add Apache Spark to SQLGlot dialect mapping'
+    master_sha: d36bccdc8c
+    author: john-bodley
+    is_merged: true
+  - pr_number: 28269
+    title: 'fix(explore): cannot reorder dnd of Metrics'
+    master_sha: 7c8423a522
+    author: justinpark
+    is_merged: true
+  - pr_number: 28271
+    title: 'fix: % replace in `values_for_column`'
+    master_sha: fe37d914e5
+    author: betodealmeida
+    is_merged: true
+  - pr_number: 28278
+    title: 'chore: allow codecov to detect SHA'
+    master_sha: 51da5adbc7
+    author: mistercrunch
+    is_merged: true
+  - pr_number: 28277
+    title: 'fix(ci): adding codecov token'
+    master_sha: 3cc8434c5a
+    author: rusackas
+    is_merged: true
+  - pr_number: 28242
+    title: 'fix(dashboard): unable to drop tabs in columns'
+    master_sha: 44690fb299
+    author: justinpark
+    is_merged: true
+  - pr_number: 28241
+    title: 'fix(explore): temporal column mixin'
+    master_sha: 743c0bde7e
+    author: justinpark
+    is_merged: true
+  - pr_number: 28156
+    title: 'fix(sqllab): invalid css scope for ace editor autocomplete'
+    master_sha: 7e94dc5b40
+    author: justinpark
+    is_merged: true
+  - pr_number: 28222
+    title: 'fix: Dremio alias'
+    master_sha: 173d5d09bf
+    author: betodealmeida
+    is_merged: true
+  - pr_number: 28152
+    title: 'fix(sql_parse): Provide more lenient logic when extracting latest[_sub]_partition'
+    master_sha: c5e7d870f0
+    author: john-bodley
+    is_merged: true
+  - pr_number: 28226
+    title: "fix(maps): adds Crimea back to Ukraine \U0001F1FA\U0001F1E6"
+    master_sha: 1e47e65ac5
+    author: rusackas
+    is_merged: true
+  - pr_number: 27554
+    title: 'fix(AlertsReports): making log retention "None" option valid '
+    master_sha: b7f3e0bb50
+    author: fisjac
+    is_merged: true
+  - pr_number: 28117
+    title: 'fix(sql_parse): Support Jinja format() filter when extracting latest[_sub]_partition'
+    master_sha: 2f11f66167
+    author: john-bodley
+    is_merged: true
+  - pr_number: 28036
+    title: 'fix: Dynamic filter does not show all values on blur/clear events'
+    master_sha: 6e01a68276
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 28018
+    title: 'fix: bump client side chart timeouts to use the SUPERSET_WEBSERVER_TIMEOUT'
+    master_sha: 99c414e4da
+    author: eschutho
+    is_merged: true
+  - pr_number: 28017
+    title: 'fix: Select is accepting unknown pasted values when `allowNewOptions`
+      is false'
+    master_sha: caad29b5b3
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 27996
+    title: 'fix: Incorrect onChange value when an unloaded value is pasted into AsyncSelect'
+    master_sha: 06077d42a8
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 27934
+    title: 'fix(time_offset): improved LIMIT-handling in advanced analytics'
+    master_sha: 6844735a45
+    author: Antonio-RiveroMartnez
+    is_merged: true
+  - pr_number: 27941
+    title: 'fix(drillby): Enable DrillBy in charts w/o filters (dimensions)'
+    master_sha: 35c8b7a162
+    author: sowo
+    is_merged: true
+  - pr_number: 27239
+    title: 'fix(alerts/reports): removing duplicate notification method options'
+    master_sha: eb4ca010ae
+    author: fisjac
+    is_merged: true
+  - pr_number: 27968
+    title: 'fix(Dashboard): Add aria-label to filters and search forms'
+    master_sha: 4202fba0f1
+    author: geido
+    is_merged: true
+  - pr_number: 27701
+    title: 'fix: useTruncation infinite loop, reenable dashboard cross links on ChartList'
+    master_sha: ae0f2ce3c1
+    author: kgabryje
+    is_merged: true
+  - pr_number: 27926
+    title: 'fix: Locale sent to frontend'
+    master_sha: 996cced3d4
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 25407
+    title: 'fix(frontend): allow "constructor" property in response data'
+    master_sha: a1983e468b
+    author: SpencerTorres
+    is_merged: true
+  - pr_number: 27717
+    title: 'chore(explore): Hide non-droppable metric and column list'
+    master_sha: eda304bda9
+    author: justinpark
+    is_merged: true
+  - pr_number: 27919
+    title: 'fix: add mariadb engine spec same as MySQL'
+    master_sha: 559605e393
+    author: dpgaspar
+    is_merged: true
+  - pr_number: 27593
+    title: 'fix(Dashboard): Add border to row when hovering HoverMenu in edit mode'
+    master_sha: 265390c243
+    author: rtexelm
+    is_merged: true
+  - pr_number: 27725
+    title: 'chore(sqllab): Do not strip comments when executing SQL statements'
+    master_sha: 5ed48760fb
+    author: john-bodley
+    is_merged: true
+  - pr_number: 27883
+    title: 'fix(bar-chart): change legend padding for horizontal orientation'
+    master_sha: cfa0556df7
+    author: lilykuang
+    is_merged: true
+  - pr_number: 27843
+    title: 'chore: Default to engine specification regarding using wildcard'
+    master_sha: 30bc8f06dc
+    author: john-bodley
+    is_merged: true
+  - pr_number: 27858
+    title: 'chore(sql_parse): Provide more meaningful SQLGlot errors'
+    master_sha: c38529741e
+    author: john-bodley
+    is_merged: true
+  - pr_number: 27842
+    title: 'chore(sql_parse): Strip leading/trailing whitespace in Jinja macro extraction'
+    master_sha: 5ab95aaf7d
+    author: john-bodley
+    is_merged: true
+  - pr_number: 27700
+    title: 'fix: row limits & row count labels are confusing'
+    master_sha: 12fe2929a4
+    author: mistercrunch
+    is_merged: true
+  - pr_number: 27845
+    title: 'fix(dashboard): missing null check in error extra'
+    master_sha: f25795c4e4
+    author: justinpark
+    is_merged: true
+  - pr_number: 27441
+    title: 'chore: Adds the 4.0 release notes'
+    master_sha: ca47717eb0
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 27768
+    title: 'chore(docs): Cleanup UPDATING.md'
+    master_sha: 8ae4662f17
+    author: john-bodley
+    is_merged: true
+  - pr_number: 27706
+    title: 'fix: Select onChange is fired when the same item is selected in single
+      mode'
+    master_sha: d69a1870a0
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 27763
+    title: 'fix: Removes filter plugins from viz gallery'
+    master_sha: bbcb722e50
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 27744
+    title: 'fix: reduce alert error to warning'
+    master_sha: 70da454bbc
+    author: eschutho
+    is_merged: true
+  - pr_number: 27625
+    title: 'perf(explore): virtualized datasource field sections'
+    master_sha: 38eecfc5d4
+    author: justinpark
+    is_merged: true
+  - pr_number: 27558
+    title: 'fix(explore): drag and drop indicator UX'
+    master_sha: '7369754192'
+    author: justinpark
+    is_merged: true
+  - pr_number: 27644
+    title: 'fix: Provide more inclusive error handling for saved queries'
+    master_sha: 3ae74d1f2d
+    author: john-bodley
+    is_merged: true
+  - pr_number: 27646
+    title: 'fix: Leverage actual database for rendering Jinjarized SQL'
+    master_sha: 28cbedb82f
+    author: john-bodley
+    is_merged: true
+  - pr_number: 27550
+    title: 'fix(AlertReports): disabling value when not null option is active'
+    master_sha: ed9e542781
+    author: fisjac
+    is_merged: true
+  - pr_number: 27636
+    title: 'fix(sqllab): unable to remove table'
+    master_sha: fa3fea9dd8
+    author: justinpark
+    is_merged: true
+  - pr_number: 27022
+    title: 'fix(Chart Annotation modal): Table and Superset annotation options will
+      paginate, exceeding previous max limit 100'
+    master_sha: ce210eebde
+    author: rtexelm
+    is_merged: true
+  - pr_number: 27552
+    title: 'fix(AlertReports): defaulting grace period to undefined'
+    master_sha: 4fce940a9c
+    author: fisjac
+    is_merged: true
+  - pr_number: 27551
+    title: 'fix(AlertReports): clearing custom_width when disabled'
+    master_sha: 0f6e4041c7
+    author: fisjac
+    is_merged: true
+  - pr_number: 27601
+    title: 'fix: Persist query params appended to permalink'
+    master_sha: 5083ca0e81
+    author: kgabryje
+    is_merged: true
+  - pr_number: 27613
+    title: 'fix(Dashboard): Add editMode conditional for translate3d fix on charts
+      to allow intended Fullscreen'
+    master_sha: 842b0939f6
+    author: rtexelm
+    is_merged: true
+  - pr_number: 27470
+    title: 'fix(sql_parse): Ensure table extraction handles Jinja templating'
+    master_sha: b25dd0c055
+    author: john-bodley
+    is_merged: true
+  - pr_number: 27388
+    title: 'fix(utils): fix off-by-one error in how rolling window''s min_periods
+      truncates dataframe'
+    master_sha: d4d8625ab8
+    author: sfirke
+    is_merged: true
+  - pr_number: 19595
+    title: 'fix: Volatile datasource ordering in dashboard export'
+    master_sha: bfe55b9ded
+    author: pnadolny13
+    is_merged: true
+  - pr_number: 27577
+    title: 'fix: sqlglot SQL Server'
+    master_sha: 72a41c1642
+    author: betodealmeida
+    is_merged: true
+  - pr_number: 27567
+    title: 'fix(db_engine_specs): Update convert_dttm to work correctly with CrateDB'
+    master_sha: fcceaf081c
+    author: hlcianfagna
+    is_merged: true
+  - pr_number: 27605
+    title: 'fix: Skips Hive tests that are blocking PRs'
+    master_sha: 718cd64657
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 27576
+    title: 'fix: bump sqlglot to support materialized CTEs'
+    master_sha: d0d9fc5bdf
+    author: betodealmeida
+    is_merged: true
+  - pr_number: 27566
+    title: 'fix: guest queries'
+    master_sha: 36290ce72f
+    author: betodealmeida
+    is_merged: true
+  - pr_number: 27488
+    title: 'perf(sqllab): reduce bootstrap data delay by queries'
+    master_sha: f4bdcb5743
+    author: justinpark
+    is_merged: true
+  - pr_number: 27464
+    title: 'fix: pass valid SQL to SM'
+    master_sha: 376bfd05bd
+    author: betodealmeida
+    is_merged: true
+  - pr_number: 26748
+    title: 'fix: `improve _extract_tables_from_sql`'
+    master_sha: 36fd3c0bf8
+    author: betodealmeida
+    is_merged: true
+  - pr_number: 27539
+    title: 'fix(explore): Allow only saved metrics and columns'
+    master_sha: 1c155e8591
+    author: justinpark
+    is_merged: true
+  - pr_number: 27260
+    title: 'fix(alerts/reports): implementing custom_width as an Antd number input'
+    master_sha: ad9024b040
+    author: fisjac
+    is_merged: true
+  - pr_number: 27487
+    title: 'fix(postprocessing): resample with holes'
+    master_sha: 7f19d296b1
+    author: villebro
+    is_merged: true
+  - pr_number: 27484
+    title: 'fix: check if guest user modified query'
+    master_sha: 735b895dd5
+    author: betodealmeida
+    is_merged: true
+  - pr_number: 27471
+    title: 'fix(webpack): remove double-dotted file extensions in webpack config'
+    master_sha: 47ae9d4cc3
+    author: rusackas
+    is_merged: true
+  - pr_number: 27186
+    title: 'fix: SSH Tunnel configuration settings '
+    master_sha: 89e89de341
+    author: geido
+    is_merged: true
+  - pr_number: 27411
+    title: 'fix(dashboard): Only fetch CSS templates for dashboard header menu when
+      in edit mode'
+    master_sha: fde93dcf08
+    author: mskelton
+    is_merged: true
+  - pr_number: 27403
+    title: 'fix: missing shared color in mixed timeseries'
+    master_sha: 9ced2552db
+    author: justinpark
+    is_merged: true
+  - pr_number: 27402
+    title: 'fix: typescript errors in 4.0'
+    master_sha: ce0b70cc86
+    author: justinpark
+    is_merged: true
+  - pr_number: 27390
+    title: 'fix: Re-enable CI checks on release branches'
+    master_sha: a54a24e3b5
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 27391
+    title: 'fix(sqllab): Close already removed tab'
+    master_sha: 5107cc0fd9
+    author: justinpark
+    is_merged: true
+  - pr_number: 27364
+    title: 'fix(API): Updating assets via the API should preserve ownership configuration'
+    master_sha: 66bf70172f
+    author: Vitor-Avila
+    is_merged: true
+  - pr_number: 27395
+    title: 'fix: improve explore REST api validations'
+    master_sha: a3d2e0bf44
+    author: dpgaspar
+    is_merged: true
+  - pr_number: 27262
+    title: 'fix(Alerts & Reports): Fixing bug that resets cron value to default when
+      empty  '
+    master_sha: 32179f1a85
+    author: fisjac
+    is_merged: true
+  - pr_number: 27366
+    title: 'fix: Results section in Explore shows an infinite spinner'
+    master_sha: 231e659b56
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 27315
+    title: 'fix(deps): resolving canvg and html2canvas module not found'
+    master_sha: 5915851ba3
+    author: fisjac
+    is_merged: true
+  - pr_number: 27187
+    title: "fix: numexpr to fix CVE-2023-39631\u2060 (2.8.4 => 2.9.0)"
+    master_sha: f453d5d7e7
+    author: nigzak
+    is_merged: true
+  - pr_number: 27361
+    title: 'fix: Missing SQL Lab permission'
+    master_sha: 8a46694ce9
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 27360
+    title: 'fix: Heatmap numeric sorting'
+    master_sha: fe2f5a7be9
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 27313
+    title: 'fix(sqllab): Missing empty query result state'
+    master_sha: ae8ec9c2b4
+    author: justinpark
+    is_merged: true
+  - pr_number: 27308
+    title: 'fix(dashboard): table chart drag preview overflowing container'
+    master_sha: ad3995daf6
+    author: rtexelm
+    is_merged: true
+  - pr_number: 27281
+    title: 'chore: bump cryptography minimum to 42.0.4'
+    master_sha: 371f2ab851
+    author: sadpandajoe
+    is_merged: true
+  - pr_number: 27295
+    title: 'fix(sqllab): invalid dump sql shown after closing tab'
+    master_sha: 8d245704ef
+    author: justinpark
+    is_merged: true
+  - pr_number: 27285
+    title: 'fix(plugin-chart-echarts): calculate Gauge Chart intervals correctly when
+      min value is set'
+    master_sha: d65f64d1ce
+    author: goto-loop
+    is_merged: true
+  - pr_number: 27307
+    title: 'fix: Incorrect data type on import page'
+    master_sha: fa04eec2d5
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 27291
+    title: 'fix: Data zoom with horizontal orientation'
+    master_sha: 7854b622a3
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 27273
+    title: 'fix: Navigating to an invalid page index in lists'
+    master_sha: 9900f56670
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 27271
+    title: 'fix: Inoperable dashboard filter slider when range is <= 1'
+    master_sha: ce9e4b4b77
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 27154
+    title: 'fix(import-datasources): Use "admin" user as default for importing datasources'
+    master_sha: 6447cd0e92
+    author: ddxv
+    is_merged: true
+  - pr_number: 27258
+    title: 'fix: Sorting charts/dashboards makes the applied filters ineffective'
+    master_sha: 8b4dce71d6
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 27213
+    title: 'fix(trino): bumping trino to fix hudi schema fetching'
+    master_sha: 11760d3fbf
+    author: rusackas
+    is_merged: true
+  - pr_number: 27236
+    title: 'fix(reports): fixing unit test '
+    master_sha: '6278315072'
+    author: fisjac
+    is_merged: true
+  - pr_number: 27217
+    title: 'fix(sqlglot): Address regressions introduced in #26476'
+    master_sha: 2c564817f1
+    author: john-bodley
+    is_merged: true
+  - pr_number: 27232
+    title: 'chore: Removes Chromatic workflow and dependencies'
+    master_sha: 6d8870125f
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 27233
+    title: 'fix: bump FAB to 4.4.1 (perf issue)'
+    master_sha: 62cf0365e9
+    author: dpgaspar
+    is_merged: true
+  - pr_number: 27167
+    title: 'fix: setting important lower bounds versions on requirements'
+    master_sha: c78ea20bef
+    author: dpgaspar
+    is_merged: true
+  - pr_number: 27215
+    title: 'fix: no limit in SELECT * for TOP dbs'
+    master_sha: c54fbe6e96
+    author: betodealmeida
+    is_merged: true
+  - pr_number: 27214
+    title: 'fix(releasing): fixes npm script for release validation'
+    master_sha: 2a47edc3a7
+    author: rusackas
+    is_merged: true
+  - pr_number: 26074
+    title: 'fix: Translations related to the date range filter'
+    master_sha: cc2f6f1ed9
+    author: Ralkion
+    is_merged: true
+  - pr_number: 26699
+    title: 'fix(dashboard): drag and drop indicator UX'
+    master_sha: ac8c283df0
+    author: justinpark
+    is_merged: true
+  - pr_number: 27191
+    title: 'fix: Failed to execute importScripts on worker-css'
+    master_sha: 983a1646c4
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 27181
+    title: 'fix(sqllab): typeahead search is broken in db selector'
+    master_sha: 8fbaf84f66
+    author: justinpark
+    is_merged: true
+  - pr_number: 26875
+    title: 'chore: make TS enums strictly PascalCase'
+    master_sha: 19f8405bc0
+    author: villebro
+    is_merged: true
+  - pr_number: 26372
+    title: 'refactor: Removes the deprecated GENERIC_CHART_AXES feature flag'
+    master_sha: 8a2f7d378a
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 26300
+    title: 'feat(maps): Consolidating all country maps (and TS) into the Jupyter notebook
+      workflow.'
+    master_sha: 73d118c0e2
+    author: rusackas
+    is_merged: true
+  - pr_number: 26329
+    title: 'refactor: Removes the deprecated DASHBOARD_NATIVE_FILTERS feature flag'
+    master_sha: 69b57016b3
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 26347
+    title: 'refactor: Removes the deprecated VERSIONED_EXPORT feature flag'
+    master_sha: f63e66be01
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 26377
+    title: 'refactor: Removes the deprecated redirect endpoint'
+    master_sha: a84d86fe26
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 26328
+    title: 'refactor: Removes the Filter Box code'
+    master_sha: d9a3c3e1dd
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 26462
+    title: 'refactor: Removes the Profile feature'
+    master_sha: 8f8c435d7c
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 26330
+    title: 'refactor: Removes the deprecated DASHBOARD_FILTERS_EXPERIMENTAL feature
+      flag'
+    master_sha: ae0eb4b8d9
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 26350
+    title: 'refactor: Migrates legacy Sunburst charts to ECharts and removes legacy
+      code'
+    master_sha: 4d9144eca5
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 26344
+    title: 'refactor: Removes the deprecated ENABLE_EXPLORE_JSON_CSRF_PROTECTION feature
+      flag'
+    master_sha: cf20b3439c
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 26345
+    title: 'refactor: Removes the deprecated ENABLE_TEMPLATE_REMOVE_FILTERS feature
+      flag'
+    master_sha: b06ab7d8e3
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 26648
+    title: 'fix: Removes unused cache cleanup'
+    master_sha: 9724abf090
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 26346
+    title: 'refactor: Removes the deprecated REMOVE_SLICE_LEVEL_LABEL_COLORS feature
+      flag'
+    master_sha: f8d25612ba
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 26200
+    title: 'refactor: Ensure Flask framework leverages the Flask-SQLAlchemy session
+      (Phase I)'
+    master_sha: df79522160
+    author: john-bodley
+    is_merged: true
+  - pr_number: 26633
+    title: 'chore: Deprecates the DASHBOARD_CROSS_FILTERS feature flag'
+    master_sha: eff4422d04
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 26635
+    title: 'chore: Deprecates the ENABLE_JAVASCRIPT_CONTROLS feature flag'
+    master_sha: d5b62d8d3e
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 26636
+    title: 'chore: Sets DASHBOARD_VIRTUALIZATION feature flag to True by default'
+    master_sha: 90c3e56d32
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 26637
+    title: 'chore: Sets the DRILL_BY feature flag to True by default'
+    master_sha: 902dafde48
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 26186
+    title: 'refactor: Ensure Celery leverages the Flask-SQLAlchemy session'
+    master_sha: 7af82ae87d
+    author: john-bodley
+    is_merged: true
+  - pr_number: 26348
+    title: 'refactor: Removes the deprecated CLIENT_CACHE feature flag'
+    master_sha: 7fccea1556
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 26349
+    title: 'refactor: Removes the deprecated DASHBOARD_CACHE feature flag'
+    master_sha: 2d3ff8c0dc
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 26369
+    title: 'refactor: Removes the filters set feature'
+    master_sha: 9387c4c16f
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 26450
+    title: 'chore: Deprecates the KV_STORE feature flag'
+    master_sha: 7ca6d8c880
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 26343
+    title: 'refactor: Removes the deprecated ENABLE_EXPLORE_DRAG_AND_DROP feature
+      flag'
+    master_sha: 6063f4ff04
+    author: michael-s-molina
+    is_merged: true
+  - pr_number: 26331
+    title: 'refactor: Removes the deprecated DISABLE_DATASET_SOURCE_EDIT feature flag'
+    master_sha: b2ad74f94f
+    author: michael-s-molina
+    is_merged: true
+  commits_in_branch:
+  - sha: fb9a121e5e
+    message: 'fix: Incorrect type in config.py (#30564)'
+    date: 2024-10-28 09:09:40 -0300
+    pr_number: 30564
+  - sha: fac8c123e3
+    message: 'fix: Unable to parse escaped tables (#30560)'
+    date: 2024-10-28 09:09:26 -0300
+    pr_number: 30560
+  - sha: b3b960b9e8
+    message: 'fix: Pre-query normalization with custom SQL (#30389)'
+    date: 2024-10-28 09:00:52 -0300
+    pr_number: 30389
+  - sha: 0cf21e9e04
+    message: 'fix: Open control with Simple tab selected when there is no column selected
+      (#30502)'
+    date: 2024-10-03 09:30:41 -0300
+    pr_number: 30502
+  - sha: 1bcddcedd6
+    message: 'fix(sqllab): Skip AceEditor in inactive tabs (#30171)'
+    date: 2024-09-06 14:06:06 -0300
+    pr_number: 30171
+  - sha: 87efb72338
+    message: 'fix(native filter): undefined layout type on filterInScope (#30164)'
+    date: 2024-09-05 15:26:12 -0300
+    pr_number: 30164
+  - sha: 46d96d2ddc
+    message: 'fix(sqllab): race condition when updating cursor position (#30154)'
+    date: 2024-09-05 15:26:12 -0300
+    pr_number: 30154
+  - sha: 93b3fa530e
+    message: 'fix(sqllab): flaky json explore modal due to shallow equality checks
+      for extra data (#29978)'
+    date: 2024-09-05 15:26:12 -0300
+    pr_number: 29978
+  - sha: 9cf255cd37
+    message: 'fix: Layout of native filters modal with lengthy columns (#29648)'
+    date: 2024-08-13 11:02:38 -0400
+    pr_number: 29648
+  - sha: 244048d986
+    message: 'fix: Loading of native filter column (#29647)'
+    date: 2024-08-13 11:02:38 -0400
+    pr_number: 29647
+  - sha: 7eb1daada4
+    message: 'fix: Required native filter message wrongfully appearing (#29643)'
+    date: 2024-08-13 11:02:38 -0400
+    pr_number: 29643
+  - sha: dad07025ab
+    message: 'fix(sqllab): Show warning message when deprecated db is selected (#29607)'
+    date: 2024-08-13 11:02:38 -0400
+    pr_number: 29607
+  - sha: 27b8315f1a
+    message: 'fix: Dashboard hangs when initial filters cannot be loaded (#29456)'
+    date: 2024-08-13 11:02:38 -0400
+    pr_number: 29456
+  - sha: 9b547ed62b
+    message: 'fix: SQL label missing for non-group-by queries (#29420)'
+    date: 2024-08-13 11:02:38 -0400
+    pr_number: 29420
+  - sha: e5acbd97f3
+    message: 'chore: Remove decode of Cypress key'
+    date: 2024-06-26 13:44:29 -0300
+    pr_number: null
+  - sha: f11fa091e2
+    message: 'chore: Adds 4.0.2 RC2 data to CHANGELOG.md'
+    date: 2024-06-26 13:24:43 -0300
+    pr_number: null
+  - sha: 56f0103b57
+    message: 'fix: adds the ability to disallow SQL functions per engine (#28639)'
+    date: 2024-06-26 11:42:15 -0300
+    pr_number: 28639
+  - sha: 6d5e38c266
+    message: 'fix(explore): don''t respect y-axis formatting (#29367)'
+    date: 2024-06-26 09:40:35 -0300
+    pr_number: 29367
+  - sha: 626d7aa418
+    message: 'fix(revert 27883): Excess padding in horizontal Bar charts (#29345)'
+    date: 2024-06-26 09:39:19 -0300
+    pr_number: 29345
+  - sha: fc97a818eb
+    message: 'chore: Rename Totals to Summary in table chart (#29360)'
+    date: 2024-06-26 09:33:37 -0300
+    pr_number: 29360
+  - sha: df8b61b284
+    message: 'fix(explore): restored hidden field values has discarded (#29349)'
+    date: 2024-06-26 09:19:22 -0300
+    pr_number: 29349
+  - sha: 35f3a490d5
+    message: 'fix: Cannot delete empty column inside a tab using the dashboard editor
+      (#29346)'
+    date: 2024-06-26 09:19:22 -0300
+    pr_number: 29346
+  - sha: 800340aa1e
+    message: 'fix: Remove recursive repr call (#29314)'
+    date: 2024-06-26 09:19:22 -0300
+    pr_number: 29314
+  - sha: e7be247164
+    message: 'fix(metastore-cache): prune before add (#29301)'
+    date: 2024-06-26 09:19:22 -0300
+    pr_number: 29301
+  - sha: 64e9a44c44
+    message: 'fix(sqllab): invalid empty state on switch tab (#29278)'
+    date: 2024-06-26 09:17:22 -0300
+    pr_number: 29278
+  - sha: efab0dd169
+    message: 'fix: filters not updating with force update when caching is enabled
+      (#29291)'
+    date: 2024-06-26 09:15:27 -0300
+    pr_number: 29291
+  - sha: a7b7b7d199
+    message: 'fix(permalink): adding anchor to dashboard permalink generation (#28744)'
+    date: 2024-06-26 09:14:30 -0300
+    pr_number: 28744
+  - sha: df93420d2e
+    message: 'chore: Adds 4.0.2 RC1 data to CHANGELOG.md'
+    date: 2024-06-18 10:13:50 -0300
+    pr_number: null
+  - sha: 40ddd591c1
+    message: 'fix: Custom SQL filter control (#29260)'
+    date: 2024-06-14 14:50:31 -0300
+    pr_number: 29260
+  - sha: 88967ba634
+    message: 'test(Explorer): Fix minor errors in ExploreViewContainer syntax, add
+      tests (#29249)'
+    date: 2024-06-14 14:34:46 -0300
+    pr_number: 29249
+  - sha: 13a11c2546
+    message: 'fix(sqllab): Do not strip comments when executing SQL statements (#29248)'
+    date: 2024-06-14 14:34:46 -0300
+    pr_number: 29248
+  - sha: 21cb4a90bb
+    message: 'chore(sqllab): Add logging for actions (#28876)'
+    date: 2024-06-14 14:34:46 -0300
+    pr_number: 28876
+  - sha: dc675a5d7f
+    message: 'fix: Workaround for Pandas.DataFrame.to_csv bug (#28755)'
+    date: 2024-06-14 14:34:46 -0300
+    pr_number: 28755
+  - sha: 8de2efc870
+    message: 'fix(Explore): Keep necessary form data to allow query mode switching
+      (#29234)'
+    date: 2024-06-13 14:33:19 -0300
+    pr_number: 29234
+  - sha: ce6fa3b652
+    message: 'fix(sqllab): run previous state query (#29230)'
+    date: 2024-06-13 09:10:25 -0300
+    pr_number: 29230
+  - sha: 60f28e11bc
+    message: 'fix(mixed-timeseries-plugin): Second query stacks stacked on top of
+      first query series (#29119)'
+    date: 2024-06-13 09:10:25 -0300
+    pr_number: 29119
+  - sha: 449be5d511
+    message: 'fix(embedded): add missing GUEST_TOKEN_HEADER_NAME to bootstrap data
+      (#28932)'
+    date: 2024-06-13 09:10:25 -0300
+    pr_number: 28932
+  - sha: a60891702a
+    message: 'fix: Remove BASE_AXIS from pre-query (#29084)'
+    date: 2024-06-05 16:00:34 -0300
+    pr_number: 29084
+  - sha: c9a6537e7d
+    message: 'fix(explore): Drill to detail truncates int64 IDs (#29081)'
+    date: 2024-06-05 15:33:55 -0300
+    pr_number: 29081
+  - sha: 36383bd0ce
+    message: 'fix(Mixed Chart Filter Control): Allow delete condition for `adhoc_filters_b`
+      (#28771)'
+    date: 2024-06-05 15:33:55 -0300
+    pr_number: 28771
+  - sha: 38fdf23453
+    message: 'fix(dashboard): unable to resize due to the overlapped droptarget (#28772)'
+    date: 2024-06-05 15:33:55 -0300
+    pr_number: 28772
+  - sha: 0e5593f8d7
+    message: 'fix: do not close database modal on mask click (#28750)'
+    date: 2024-05-30 10:39:41 -0300
+    pr_number: 28750
+  - sha: 9d3d6d1de7
+    message: 'fix(reports): Update the element class to wait for when taking a screenshot
+      (#28745)'
+    date: 2024-05-30 10:31:00 -0300
+    pr_number: 28745
+  - sha: 379ccc0563
+    message: 'fix(sqllab): Sort db selector options by the API order (#28749)'
+    date: 2024-05-30 10:30:38 -0300
+    pr_number: 28749
+  - sha: 24604981c5
+    message: 'fix: Handling of column types for Presto, Trino, et al. (#28653)'
+    date: 2024-05-30 10:04:54 -0300
+    pr_number: 28653
+  - sha: 64c1c37adc
+    message: 'fix: Add back description column to saved queries #12431 (#28349)'
+    date: 2024-05-30 09:57:09 -0300
+    pr_number: 12431
+  - sha: 9626959e1a
+    message: 'fix: improve df to records performance (#28512)'
+    date: 2024-05-30 09:50:48 -0300
+    pr_number: 28512
+  - sha: 623913e5ed
+    message: 'fix: revert fix(presto preview): re-enable schema previsualization for
+      Trino/Presto table/schemas" (#28613)'
+    date: 2024-05-21 15:26:24 -0300
+    pr_number: 28613
+  - sha: 53f98af0fd
+    message: 'fix: Revert "fix: don''t strip SQL comments in Explore (#28363)" (#28567)'
+    date: 2024-05-17 15:33:44 -0300
+    pr_number: 28363
+  - sha: bfa85b4479
+    message: 'fix(explore): hide a control wrapped with StashFormDataContainer correctly
+      (#28555)'
+    date: 2024-05-16 18:31:12 -0300
+    pr_number: 28555
+  - sha: d135976256
+    message: 'fix(dashboard): invalid drop item on a tab (#28507)'
+    date: 2024-05-15 08:56:14 -0300
+    pr_number: 28507
+  - sha: dffc445d6d
+    message: 'fix: Time shifts calculation for ECharts plugins (#28432)'
+    date: 2024-05-15 08:56:14 -0300
+    pr_number: 28432
+  - sha: fc71e986e2
+    message: 'fix(presto preview): re-enable schema previsualization for Trino/Presto
+      table/schemas (#26782)'
+    date: 2024-05-15 08:56:14 -0300
+    pr_number: 26782
+  - sha: 78d5b47b98
+    message: 'fix: Update migration logic in #27119 (#28422)'
+    date: 2024-05-13 16:40:28 -0300
+    pr_number: 27119
+  - sha: 59673695ac
+    message: 'fix(ar-modal): updateNotificationSettings not updating state (#28409)'
+    date: 2024-05-13 15:33:09 -0300
+    pr_number: 28409
+  - sha: 44239616c1
+    message: 'fix(dashboard): Change class name on last Droppable in a column (#28395)'
+    date: 2024-05-13 15:33:09 -0300
+    pr_number: 28395
+  - sha: 8bf84e5bf6
+    message: 'fix: type annotation breaking on py3.9 (#28396)'
+    date: 2024-05-13 15:33:08 -0300
+    pr_number: 28396
+  - sha: ad2db084c8
+    message: 'fix: Contribution percentages for ECharts plugins (#28368)'
+    date: 2024-05-13 15:33:08 -0300
+    pr_number: 28368
+  - sha: 0c6fdc5560
+    message: 'fix: Scroll to top when selecting a global dashboard tab (#28386)'
+    date: 2024-05-13 15:33:08 -0300
+    pr_number: 28386
+  - sha: 17b5367ee3
+    message: 'fix(explore): hide advanced analytics for non temporal xaxis (#28312)'
+    date: 2024-05-08 17:41:38 -0300
+    pr_number: 28312
+  - sha: e2dfdc9055
+    message: 'fix: don''t strip SQL comments in Explore (#28363)'
+    date: 2024-05-08 17:19:34 -0300
+    pr_number: 28363
+  - sha: dc0a97ccb6
+    message: 'fix: Remedy logic for UpdateDatasetCommand uniqueness check (#28341)'
+    date: 2024-05-08 16:18:26 -0300
+    pr_number: 28341
+  - sha: d046a328a2
+    message: 'fix: Small tweaks for Line and Area chart migrations (ECharts) (#28334)'
+    date: 2024-05-08 13:26:32 -0300
+    pr_number: 28334
+  - sha: d379184b75
+    message: 'fix: use pessimistic json encoder in SQL Lab (#28266)'
+    date: 2024-05-08 13:25:57 -0300
+    pr_number: 28266
+  - sha: 1ff2c3bbd2
+    message: 'fix: Rename legacy line and area charts (#28113)'
+    date: 2024-05-03 08:50:45 -0300
+    pr_number: 28113
+  - sha: 552474a5de
+    message: 'fix: Ignore USE SQL keyword when determining SELECT statement (#28279)'
+    date: 2024-05-02 17:07:21 -0300
+    pr_number: 28279
+  - sha: eb56ac027d
+    message: 'fix(sql_parse): Add Apache Spark to SQLGlot dialect mapping (#28322)'
+    date: 2024-05-02 17:07:21 -0300
+    pr_number: 28322
+  - sha: 3b8bc9b2bd
+    message: 'chore: Adds 4.0.1 RC1 data to CHANGELOG.md'
+    date: 2024-05-02 11:23:51 -0300
+    pr_number: null
+  - sha: 4d3e60dabc
+    message: 'chore: allow codecov to detect SHA (#28278)'
+    date: 2024-05-02 09:24:33 -0300
+    pr_number: 28278
+  - sha: 5de4862af0
+    message: 'fix(explore): cannot reorder dnd of Metrics (#28269)'
+    date: 2024-05-01 10:33:26 -0300
+    pr_number: 28269
+  - sha: cb18202640
+    message: 'fix: % replace in `values_for_column` (#28271)'
+    date: 2024-05-01 10:33:07 -0300
+    pr_number: 28271
+  - sha: 453f74780f
+    message: 'fix(ci): adding codecov token (#28277)'
+    date: 2024-05-01 10:26:00 -0300
+    pr_number: 28277
+  - sha: aef6564e1e
+    message: 'fix(dashboard): unable to drop tabs in columns (#28242)'
+    date: 2024-04-29 14:52:24 -0300
+    pr_number: 28242
+  - sha: b738a754c9
+    message: 'fix(explore): temporal column mixin (#28241)'
+    date: 2024-04-29 14:52:24 -0300
+    pr_number: 28241
+  - sha: c250ad259e
+    message: "fix(maps): adds Crimea back to Ukraine \U0001F1FA\U0001F1E6 (#28226)"
+    date: 2024-04-29 13:40:22 -0300
+    pr_number: 28226
+  - sha: 3d8f00b074
+    message: 'fix(sqllab): invalid css scope for ace editor autocomplete (#28156)'
+    date: 2024-04-29 09:29:07 -0300
+    pr_number: 28156
+  - sha: 51b5899b67
+    message: 'fix: Dremio alias (#28222)'
+    date: 2024-04-29 09:29:07 -0300
+    pr_number: 28222
+  - sha: f413ae43c5
+    message: 'fix(sql_parse): Provide more lenient logic when extracting latest[_sub]_partition
+      (#28152)'
+    date: 2024-04-29 09:29:07 -0300
+    pr_number: 28152
+  - sha: a8f7ea0720
+    message: 'fix(AlertsReports): making log retention "None" option valid  (#27554)'
+    date: 2024-04-29 09:07:03 -0300
+    pr_number: 27554
+  - sha: 149d7eea00
+    message: 'fix(sql_parse): Support Jinja format() filter when extracting latest[_sub]_partition
+      (#28117)'
+    date: 2024-04-19 08:28:21 -0300
+    pr_number: 28117
+  - sha: ee92eeb605
+    message: 'fix: Dynamic filter does not show all values on blur/clear events (#28036)'
+    date: 2024-04-16 09:35:05 -0300
+    pr_number: 28036
+  - sha: aa75891136
+    message: 'fix: bump client side chart timeouts to use the SUPERSET_WEBSERVER_TIMEOUT
+      (#28018)'
+    date: 2024-04-16 09:35:05 -0300
+    pr_number: 28018
+  - sha: 41230db0ea
+    message: 'fix: Select is accepting unknown pasted values when `allowNewOptions`
+      is false (#28017)'
+    date: 2024-04-16 09:35:05 -0300
+    pr_number: 28017
+  - sha: 1cf0b14058
+    message: 'fix: Incorrect onChange value when an unloaded value is pasted into
+      AsyncSelect (#27996)'
+    date: 2024-04-16 09:35:05 -0300
+    pr_number: 27996
+  - sha: 7c670e2cd6
+    message: 'fix(time_offset): improved LIMIT-handling in advanced analytics (#27934)'
+    date: 2024-04-16 09:35:05 -0300
+    pr_number: 27934
+  - sha: aa9aea6a4f
+    message: 'fix(drillby): Enable DrillBy in charts w/o filters (dimensions) (#27941)'
+    date: 2024-04-16 09:35:05 -0300
+    pr_number: 27941
+  - sha: 10dffa6d2a
+    message: 'fix(alerts/reports): removing duplicate notification method options
+      (#27239)'
+    date: 2024-04-16 08:28:18 -0300
+    pr_number: 27239
+  - sha: d6e0ff5879
+    message: 'fix(Dashboard): Add aria-label to filters and search forms (#27968)'
+    date: 2024-04-16 08:28:17 -0300
+    pr_number: 27968
+  - sha: 42e1329fd2
+    message: 'fix: useTruncation infinite loop, reenable dashboard cross links on
+      ChartList (#27701)'
+    date: 2024-04-16 08:28:17 -0300
+    pr_number: 27701
+  - sha: e6ff82f561
+    message: 'fix: Locale sent to frontend (#27926)'
+    date: 2024-04-16 08:28:17 -0300
+    pr_number: 27926
+  - sha: af9dc6fb01
+    message: 'chore(explore): Hide non-droppable metric and column list (#27717)'
+    date: 2024-04-10 17:44:12 -0300
+    pr_number: 27717
+  - sha: 23cd2b138b
+    message: 'fix(frontend): allow "constructor" property in response data (#25407)'
+    date: 2024-04-08 11:26:59 -0300
+    pr_number: 25407
+  - sha: cb39fcd67d
+    message: 'fix: add mariadb engine spec same as MySQL (#27919)'
+    date: 2024-04-08 10:40:02 -0300
+    pr_number: 27919
+  - sha: ecc6ced4d4
+    message: 'fix(Dashboard): Add border to row when hovering HoverMenu in edit mode
+      (#27593)'
+    date: 2024-04-08 10:40:02 -0300
+    pr_number: 27593
+  - sha: 899cd0eda8
+    message: 'chore(sqllab): Do not strip comments when executing SQL statements (#27725)'
+    date: 2024-04-08 10:40:02 -0300
+    pr_number: 27725
+  - sha: 300669f1e7
+    message: 'fix(bar-chart): change legend padding for horizontal orientation (#27883)'
+    date: 2024-04-08 10:40:02 -0300
+    pr_number: 27883
+  - sha: 1b7f599107
+    message: 'chore: Default to engine specification regarding using wildcard (#27843)'
+    date: 2024-04-08 10:40:02 -0300
+    pr_number: 27843
+  - sha: 40fdbd1d05
+    message: 'chore(sql_parse): Provide more meaningful SQLGlot errors (#27858)'
+    date: 2024-04-08 10:40:02 -0300
+    pr_number: 27858
+  - sha: a39971abcd
+    message: 'chore(sql_parse): Strip leading/trailing whitespace in Jinja macro extraction
+      (#27842)'
+    date: 2024-04-08 10:40:02 -0300
+    pr_number: 27842
+  - sha: 54942e2eaa
+    message: 'fix: row limits & row count labels are confusing (#27700)'
+    date: 2024-04-08 10:40:01 -0300
+    pr_number: 27700
+  - sha: 026c75e018
+    message: 'fix(dashboard): missing null check in error extra (#27845)'
+    date: 2024-04-08 10:40:01 -0300
+    pr_number: 27845
+  - sha: c35842e9f1
+    message: 'chore: Adds 4.0.0 RC2 data to CHANGELOG.md'
+    date: 2024-04-01 16:18:03 -0300
+    pr_number: null
+  - sha: 6a21f6da3d
+    message: 'chore: Adds the 4.0 release notes (#27441)'
+    date: 2024-04-01 16:14:10 -0300
+    pr_number: 27441
+  - sha: 0d5be95826
+    message: 'chore(docs): Cleanup UPDATING.md (#27768)'
+    date: 2024-04-01 16:06:30 -0300
+    pr_number: 27768
+  - sha: b7fa3edcf4
+    message: 'fix: Select onChange is fired when the same item is selected in single
+      mode (#27706)'
+    date: 2024-04-01 16:06:30 -0300
+    pr_number: 27706
+  - sha: b8e556d6f2
+    message: 'fix: Removes filter plugins from viz gallery (#27763)'
+    date: 2024-04-01 16:06:09 -0300
+    pr_number: 27763
+  - sha: bb5c0b4086
+    message: 'fix: reduce alert error to warning (#27744)'
+    date: 2024-03-28 09:27:44 -0300
+    pr_number: 27744
+  - sha: 2fa1b35c16
+    message: 'perf(explore): virtualized datasource field sections (#27625)'
+    date: 2024-03-28 09:27:44 -0300
+    pr_number: 27625
+  - sha: a024b4ac1b
+    message: 'fix(explore): drag and drop indicator UX (#27558)'
+    date: 2024-03-28 09:27:43 -0300
+    pr_number: 27558
+  - sha: 5c567895cc
+    message: 'fix: Provide more inclusive error handling for saved queries (#27644)'
+    date: 2024-03-26 16:37:40 -0300
+    pr_number: 27644
+  - sha: 51ad63426c
+    message: 'fix: Leverage actual database for rendering Jinjarized SQL (#27646)'
+    date: 2024-03-26 16:37:22 -0300
+    pr_number: 27646
+  - sha: 34b06f94ab
+    message: 'fix(AlertReports): disabling value when not null option is active (#27550)'
+    date: 2024-03-26 15:37:36 -0300
+    pr_number: 27550
+  - sha: 32aa25ae17
+    message: 'fix(sqllab): unable to remove table (#27636)'
+    date: 2024-03-26 15:37:36 -0300
+    pr_number: 27636
+  - sha: 29553939a2
+    message: 'fix(Chart Annotation modal): Table and Superset annotation options will
+      paginate, exceeding previous max limit 100 (#27022)'
+    date: 2024-03-26 15:37:36 -0300
+    pr_number: 27022
+  - sha: d8517213bf
+    message: 'fix(AlertReports): defaulting grace period to undefined (#27552)'
+    date: 2024-03-26 15:37:36 -0300
+    pr_number: 27552
+  - sha: 3bfa8a9cbc
+    message: 'fix(AlertReports): clearing custom_width when disabled (#27551)'
+    date: 2024-03-26 15:36:06 -0300
+    pr_number: 27551
+  - sha: 7c14968e6d
+    message: 'fix(sql_parse): Ensure table extraction handles Jinja templating (#27470)'
+    date: 2024-03-22 09:29:07 -0300
+    pr_number: 27470
+  - sha: 4ff331a66c
+    message: 'fix: Persist query params appended to permalink (#27601)'
+    date: 2024-03-22 09:28:27 -0300
+    pr_number: 27601
+  - sha: a2fb13b522
+    message: 'fix(Dashboard): Add editMode conditional for translate3d fix on charts
+      to allow intended Fullscreen (#27613)'
+    date: 2024-03-22 09:28:27 -0300
+    pr_number: 27613
+  - sha: fe95adac98
+    message: 'fix(utils): fix off-by-one error in how rolling window''s min_periods
+      truncates dataframe (#27388)'
+    date: 2024-03-22 09:28:27 -0300
+    pr_number: 27388
+  - sha: 90afb34df5
+    message: 'fix: Volatile datasource ordering in dashboard export (#19595)'
+    date: 2024-03-22 09:28:27 -0300
+    pr_number: 19595
+  - sha: 336f6bd021
+    message: 'fix: sqlglot SQL Server (#27577)'
+    date: 2024-03-22 09:28:26 -0300
+    pr_number: 27577
+  - sha: 4a59f23be3
+    message: 'fix: bump sqlglot to support materialized CTEs (#27576)'
+    date: 2024-03-21 16:21:28 -0300
+    pr_number: 27576
+  - sha: 652e6cfa3f
+    message: 'fix(db_engine_specs): Update convert_dttm to work correctly with CrateDB
+      (#27567)'
+    date: 2024-03-21 16:19:15 -0300
+    pr_number: 27567
+  - sha: 634d72b19d
+    message: 'fix: Skips Hive tests that are blocking PRs (#27605)'
+    date: 2024-03-21 16:19:15 -0300
+    pr_number: 27605
+  - sha: 4b750c0caf
+    message: 'fix: guest queries (#27566)'
+    date: 2024-03-21 16:19:14 -0300
+    pr_number: 27566
+  - sha: f52647ff48
+    message: 'perf(sqllab): reduce bootstrap data delay by queries (#27488)'
+    date: 2024-03-19 09:57:28 -0300
+    pr_number: 27488
+  - sha: 35562198f8
+    message: 'fix: pass valid SQL to SM (#27464)'
+    date: 2024-03-19 09:57:28 -0300
+    pr_number: 27464
+  - sha: 94f677850c
+    message: 'feat: `improve _extract_tables_from_sql` (#26748)'
+    date: 2024-03-19 09:57:09 -0300
+    pr_number: 26748
+  - sha: d4314a92d8
+    message: 'fix(explore): Allow only saved metrics and columns (#27539)'
+    date: 2024-03-19 09:54:00 -0300
+    pr_number: 27539
+  - sha: 297849a8b5
+    message: 'fix(alerts/reports): implementing custom_width as an Antd number input
+      (#27260)'
+    date: 2024-03-19 09:28:13 -0300
+    pr_number: 27260
+  - sha: 1016fd92f6
+    message: 'fix(postprocessing): resample with holes (#27487)'
+    date: 2024-03-19 09:28:13 -0300
+    pr_number: 27487
+  - sha: 017e0fc733
+    message: 'fix: check if guest user modified query (#27484)'
+    date: 2024-03-14 09:32:56 -0300
+    pr_number: 27484
+  - sha: 0ee452e9f9
+    message: 'fix(webpack): remove double-dotted file extensions in webpack config
+      (#27471)'
+    date: 2024-03-14 09:32:56 -0300
+    pr_number: 27471
+  - sha: 131c254fe7
+    message: 'fix: SSH Tunnel configuration settings  (#27186)'
+    date: 2024-03-14 09:32:56 -0300
+    pr_number: 27186
+  - sha: 759863553d
+    message: 'fix(dashboard): Only fetch CSS templates for dashboard header menu when
+      in edit mode (#27411)'
+    date: 2024-03-14 09:32:56 -0300
+    pr_number: 27411
+  - sha: 15557f493d
+    message: 'fix(deps): resolving canvg and html2canvas module not found (#27315)'
+    date: 2024-03-14 09:32:55 -0300
+    pr_number: 27315
+  - sha: 5b6e5e475e
+    message: 'fix: missing shared color in mixed timeseries (#27403)'
+    date: 2024-03-07 15:51:07 -0300
+    pr_number: 27403
+  - sha: 2060e545e6
+    message: 'fix: typescript errors in 4.0 (#27402)'
+    date: 2024-03-07 15:17:06 -0300
+    pr_number: 27402
+  - sha: 0baa2af200
+    message: 'fix: Re-enable CI checks on release branches (#27390)'
+    date: 2024-03-07 15:17:06 -0300
+    pr_number: 27390
+  - sha: db6df71fad
+    message: 'fix(sqllab): Close already removed tab (#27391)'
+    date: 2024-03-07 15:17:06 -0300
+    pr_number: 27391
+  - sha: 4f3a7f3931
+    message: 'fix(API): Updating assets via the API should preserve ownership configuration
+      (#27364)'
+    date: 2024-03-07 15:17:06 -0300
+    pr_number: 27364
+  - sha: 94aeef5f82
+    message: 'fix: improve explore REST api validations (#27395)'
+    date: 2024-03-07 15:17:06 -0300
+    pr_number: 27395
+  - sha: 19efb146b2
+    message: 'fix(Alerts & Reports): Fixing bug that resets cron value to default
+      when empty   (#27262)'
+    date: 2024-03-04 11:35:24 -0500
+    pr_number: 27262
+  - sha: 25b7eb0ec9
+    message: 'fix: Results section in Explore shows an infinite spinner (#27366)'
+    date: 2024-03-04 11:16:40 -0500
+    pr_number: 27366
+  - sha: ecebd70ba0
+    message: "chore: numexpr to fix CVE-2023-39631\u2060 (2.8.4 => 2.9.0) (#27187)"
+    date: 2024-03-04 11:16:40 -0500
+    pr_number: 27187
+  - sha: e9ebc386f2
+    message: 'fix: Missing SQL Lab permission (#27361)'
+    date: 2024-03-04 11:16:40 -0500
+    pr_number: 27361
+  - sha: 85efe2525c
+    message: 'fix: Heatmap numeric sorting (#27360)'
+    date: 2024-03-04 11:16:40 -0500
+    pr_number: 27360
+  - sha: f0632405c2
+    message: 'fix(sqllab): Missing empty query result state (#27313)'
+    date: 2024-03-04 11:16:40 -0500
+    pr_number: 27313
+  - sha: f5750dda8c
+    message: 'fix(dashboard): table chart drag preview overflowing container (#27308)'
+    date: 2024-03-04 11:16:40 -0500
+    pr_number: 27308
+  - sha: c0fa4f43e1
+    message: 'chore: bump cryptography minimum to 42.0.4 (#27281)'
+    date: 2024-03-04 11:16:40 -0500
+    pr_number: 27281
+  - sha: e881675f58
+    message: 'fix(sqllab): invalid dump sql shown after closing tab (#27295)'
+    date: 2024-03-04 11:16:40 -0500
+    pr_number: 27295
+  - sha: 8103f22fa3
+    message: 'fix(plugin-chart-echarts): calculate Gauge Chart intervals correctly
+      when min value is set (#27285)'
+    date: 2024-03-04 11:16:40 -0500
+    pr_number: 27285
+  - sha: 74842fe6e8
+    message: 'fix: Incorrect data type on import page (#27307)'
+    date: 2024-03-04 11:16:40 -0500
+    pr_number: 27307
+  - sha: 5cba9bcb0e
+    message: 'fix: Data zoom with horizontal orientation (#27291)'
+    date: 2024-03-04 11:16:40 -0500
+    pr_number: 27291
+  - sha: 824367564a
+    message: 'fix: Navigating to an invalid page index in lists (#27273)'
+    date: 2024-03-04 11:16:25 -0500
+    pr_number: 27273
+  - sha: 6b82e27561
+    message: 'fix: Inoperable dashboard filter slider when range is <= 1 (#27271)'
+    date: 2024-03-04 11:13:39 -0500
+    pr_number: 27271
+  - sha: 2e80b688bb
+    message: 'fix(import-datasources): Use "admin" user as default for importing datasources
+      (#27154)'
+    date: 2024-03-04 11:13:39 -0500
+    pr_number: 27154
+  - sha: b9ec312350
+    message: 'fix: Sorting charts/dashboards makes the applied filters ineffective
+      (#27258)'
+    date: 2024-03-04 11:13:38 -0500
+    pr_number: 27258
+  - sha: 524dbd570d
+    message: 'fix(trino): bumping trino to fix hudi schema fetching (#27213)'
+    date: 2024-03-04 11:13:38 -0500
+    pr_number: 27213
+  - sha: 8fd47c62c1
+    message: 'fix(reports): fixing unit test  (#27236)'
+    date: 2024-03-04 11:13:38 -0500
+    pr_number: 27236
+  - sha: 7de3e0fcda
+    message: 'fix(sqlglot): Address regressions introduced in #26476 (#27217)'
+    date: 2024-03-04 11:13:38 -0500
+    pr_number: 26476
+  - sha: 7115b2cce6
+    message: 'chore: Removes Chromatic workflow and dependencies (#27232)'
+    date: 2024-03-04 11:13:38 -0500
+    pr_number: 27232
+  - sha: 3650228f88
+    message: 'fix: bump FAB to 4.4.1 (perf issue) (#27233)'
+    date: 2024-03-04 11:13:38 -0500
+    pr_number: 27233
+  - sha: ffa0c73776
+    message: 'fix: setting important lower bounds versions on requirements (#27167)'
+    date: 2024-02-23 10:49:07 -0500
+    pr_number: 27167
+  - sha: c29873cc81
+    message: 'fix: no limit in SELECT * for TOP dbs (#27215)'
+    date: 2024-02-23 10:49:07 -0500
+    pr_number: 27215
+  - sha: ef2ca408cc
+    message: 'fix(releasing): fixes npm script for release validation (#27214)'
+    date: 2024-02-23 10:49:07 -0500
+    pr_number: 27214
+  - sha: d47fd44b49
+    message: 'fix: Translations related to the date range filter (#26074)'
+    date: 2024-02-23 10:49:06 -0500
+    pr_number: 26074
+  - sha: 3440a301ba
+    message: 'fix(dashboard): drag and drop indicator UX (#26699)'
+    date: 2024-02-23 10:49:05 -0500
+    pr_number: 26699
+  - sha: a523d9aac6
+    message: 'fix: Failed to execute importScripts on worker-css (#27191)'
+    date: 2024-02-23 10:49:05 -0500
+    pr_number: 27191
+  - sha: d69be3286a
+    message: 'fix(sqllab): typeahead search is broken in db selector (#27181)'
+    date: 2024-02-23 10:49:05 -0500
+    pr_number: 27181
+  - sha: beb9ec77a5
+    message: 'chore: Adds 4.0.0 RC1 data to CHANGELOG.md and UPDATING.md'
+    date: 2024-02-20 11:42:05 -0500
+    pr_number: null
+  micro_releases:
+  - version: 4.0.2rc2
+    tag_sha: f11fa091
+    tag_date: 2024-06-26 13:24:43 -0300
+    commit_date: 2024-06-26 13:24:43 -0300
+  - version: 4.0.2rc1
+    tag_sha: df93420d
+    tag_date: 2024-06-18 10:13:50 -0300
+    commit_date: 2024-06-18 10:13:50 -0300
+  - version: 4.0.2
+    tag_sha: f11fa091
+    tag_date: 2024-06-26 13:24:43 -0300
+    commit_date: 2024-06-26 13:24:43 -0300
+  - version: 4.0.1rc1
+    tag_sha: 3b8bc9b2
+    tag_date: 2024-05-02 11:23:51 -0300
+    commit_date: 2024-05-02 11:23:51 -0300
+  - version: 4.0.1
+    tag_sha: 3b8bc9b2
+    tag_date: 2024-05-02 11:23:51 -0300
+    commit_date: 2024-05-02 11:23:51 -0300
+  - version: 4.0.0rc2
+    tag_sha: c35842e9
+    tag_date: 2024-04-01 16:18:03 -0300
+    commit_date: 2024-04-01 16:18:03 -0300
+  - version: 4.0.0rc1
+    tag_sha: beb9ec77
+    tag_date: 2024-02-20 11:42:05 -0500
+    commit_date: 2024-02-20 11:42:05 -0500
+  - version: 4.0.0
+    tag_sha: c35842e9
+    tag_date: 2024-04-01 16:18:03 -0300
+    commit_date: 2024-04-01 16:18:03 -0300
+  last_synced: '2025-08-28T01:13:38.853828'
+  synced_from_repo: apache/superset
