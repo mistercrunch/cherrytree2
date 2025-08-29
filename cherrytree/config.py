@@ -95,7 +95,7 @@ def show_config_command(format_type: str = "table") -> None:
 
         if not repo_path:
             console.print(
-                "\n[yellow]Set repository with: cherrytree config set-repo /path/to/superset[/yellow]"
+                "\n[yellow]Run cherrytree from within your Superset repository directory[/yellow]"
             )
 
 
