@@ -102,7 +102,11 @@ def show_config_command(format_type: str = "table") -> None:
 def get_repo_path() -> Optional[str]:
     """Get configured repository path."""
     config = load_config()
-    return config.get("default", {}).get("repo_path")
+    default_config = config.get("default", {})
+    if isinstance(default_config, dict):
+        repo_path = default_config.get("repo_path")
+        return repo_path if isinstance(repo_path, str) else None
+    return None
 
 
 def get_github_repo() -> str:

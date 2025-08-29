@@ -12,14 +12,25 @@ from .micro import display_micro_status
 from .next import display_next_command
 from .status import display_minor_status
 from .sync import sync_command
+from .tables import display_minors_overview
 
 app = typer.Typer(
     name="cherrytree",
     help="Intelligent AI-assisted release management and cherry-picking for Apache Superset",
-    no_args_is_help=True,
 )
 
 console = Console()
+
+
+@app.callback(invoke_without_command=True)
+def main_callback(ctx: typer.Context) -> None:
+    """Main callback that shows overview when no command is provided."""
+    if ctx.invoked_subcommand is None:
+        # Show the overview table
+        display_minors_overview()
+        # Show help after the overview
+        print(ctx.get_help())
+        raise typer.Exit()
 
 
 # Create minor subcommand group
@@ -35,12 +46,17 @@ app.add_typer(micro_app)
 
 @minor_app.command("sync")
 def minor_sync(
-    minor_version: str = typer.Argument(help="Minor version to sync (e.g., 5.0, 4.2)"),
+    minor_version: Optional[str] = typer.Argument(
+        None, help="Minor version to sync (e.g., 5.0, 4.2). Use --all to sync all valid minors"
+    ),
     repo_path: Optional[str] = typer.Option(None, "--repo", help="Local repository path"),
     github_repo: str = typer.Option("apache/superset", "--github-repo", help="GitHub repository"),
     output_dir: str = typer.Option("releases", "--output", help="Output directory for YAML files"),
     dry_run: bool = typer.Option(
         False, "--dry-run", help="Show what would be done without writing files"
+    ),
+    sync_all: bool = typer.Option(
+        False, "--all", "-a", help="Sync all valid minor release branches"
     ),
 ) -> None:
     """Sync release branch state from git and GitHub."""
@@ -48,7 +64,39 @@ def minor_sync(
     if not repo_path:
         repo_path = get_repo_path()
 
-    sync_command(minor_version, repo_path, github_repo, output_dir, dry_run)
+    # Validate arguments
+    if sync_all and minor_version:
+        console.print("[red]Error: Cannot specify both minor version and --all flag[/red]")
+        raise typer.Exit(1)
+
+    if not sync_all and not minor_version:
+        console.print("[red]Error: Must specify either a minor version or use --all flag[/red]")
+        raise typer.Exit(1)
+
+    if sync_all:
+        # Import here to avoid circular imports
+        from .tables import get_available_minors
+
+        # Get all valid minor versions and sync them
+        minors = get_available_minors()
+        if not minors:
+            console.print("[yellow]No valid minor versions found to sync[/yellow]")
+            return
+
+        console.print(f"[bold]Syncing {len(minors)} minor versions: {', '.join(minors)}[/bold]")
+        console.print()
+
+        for i, minor in enumerate(minors, 1):
+            console.print(f"[bold cyan]({i}/{len(minors)}) Syncing {minor}...[/bold cyan]")
+            try:
+                sync_command(minor, repo_path, github_repo, output_dir, dry_run)
+                console.print(f"[green]✅ Successfully synced {minor}[/green]")
+            except Exception as e:
+                console.print(f"[red]❌ Failed to sync {minor}: {e}[/red]")
+            console.print()
+    else:
+        assert minor_version is not None  # Validated above
+        sync_command(minor_version, repo_path, github_repo, output_dir, dry_run)
 
 
 @minor_app.command("status")

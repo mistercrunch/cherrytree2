@@ -6,8 +6,11 @@ from typing import Any, Dict, List, Optional
 import typer
 from rich.console import Console
 
-from .git_utils import GitError, run_git_command
-from .status import create_pr_table, load_release_state
+from .commit import Commit
+from .git_interface import GitInterface
+from .micro_release import Micro
+from .minor import Minor
+from .tables import create_pr_table
 
 console = Console()
 
@@ -15,38 +18,17 @@ console = Console()
 def get_commits_in_range(repo_path: Path, start_sha: str, end_sha: str) -> List[Dict[str, Any]]:
     """Get commits between two SHAs."""
     try:
-        # Get commits in range start_sha..end_sha
-        log_output = run_git_command(
-            ["log", f"{start_sha}..{end_sha}", "--format=%h|%s|%an|%ci"], repo_path
-        )
+        git = GitInterface(repo_path, console)
+        commits = git.get_commits_in_range(start_sha, end_sha)
 
-        commits = []
-        for line in log_output.split("\n"):
-            if not line.strip():
-                continue
+        # Convert to dict format for backward compatibility
+        commits_dict = []
+        for commit in commits:
+            commits_dict.append(commit.to_dict())
 
-            parts = line.split("|", 3)
-            if len(parts) >= 4:
-                sha, message, author, date = parts
+        return commits_dict
 
-                # Extract PR number from commit message using the same logic as sync
-                from .git_parser import parse_pr_from_commit_message
-
-                pr_number = parse_pr_from_commit_message(message)
-
-                commits.append(
-                    {
-                        "sha": sha,
-                        "message": message,
-                        "author": author,
-                        "date": date,
-                        "pr_number": pr_number,
-                    }
-                )
-
-        return commits
-
-    except GitError as e:
+    except Exception as e:
         console.print(f"[red]Error getting commits: {e}[/red]")
         return []
 
@@ -55,16 +37,16 @@ def get_prs_in_micro(
     minor_version: str, micro_version: str, repo_path: str
 ) -> List[Dict[str, Any]]:
     """Get PRs that are included in a specific micro release."""
-    state = load_release_state(minor_version)
+    minor = Minor.from_yaml(minor_version)
 
-    if not state:
+    if not minor:
         return []
 
-    # Find the micro release
-    micro_releases = state.get("micro_releases", [])
+    # Find the micro release using Micro objects
     target_micro = None
-    for micro in micro_releases:
-        if micro.get("version") == micro_version:
+    for micro_data in minor.micro_releases:
+        micro = Micro.from_dict(micro_data)
+        if micro.version == micro_version:
             target_micro = micro
             break
 
@@ -73,40 +55,41 @@ def get_prs_in_micro(
 
     # Get commits in this micro release
     repo_path_obj = Path(repo_path).resolve()
-    target_sha = target_micro.get("tag_sha", "")
-    base_sha = state.get("base_sha", "")
+    target_sha = target_micro.tag_sha
+    base_sha = minor.base_sha
 
     # Find previous micro or use base SHA
-    sorted_micros = sorted(micro_releases, key=lambda x: x.get("tag_date", ""))
-    target_index = next(i for i, m in enumerate(sorted_micros) if m.get("version") == micro_version)
+    micro_objects = [Micro.from_dict(data) for data in minor.micro_releases]
+    sorted_micros = sorted(micro_objects, key=lambda x: x.tag_date)
+    target_index = next(i for i, m in enumerate(sorted_micros) if m.version == micro_version)
 
     if target_index == 0:
         # First micro - compare with base SHA
         prev_sha = base_sha
     else:
         # Compare with previous micro
-        prev_sha = sorted_micros[target_index - 1].get("tag_sha", base_sha)
+        prev_sha = sorted_micros[target_index - 1].tag_sha
 
     # Get commits between previous and current
     commits_in_micro = get_commits_in_range(repo_path_obj, prev_sha, target_sha)
 
     # Map commits to PRs (include all commits with PR numbers, not just targeted ones)
-    targeted_prs = state.get("targeted_prs", [])
-    pr_lookup = {pr.get("pr_number"): pr for pr in targeted_prs}
+    pr_lookup = {pr.get("pr_number"): pr for pr in minor.targeted_prs}
 
     prs_in_micro = []
-    for commit in commits_in_micro:
-        pr_number = commit.get("pr_number")
-        if pr_number:
+    for commit_data in commits_in_micro:
+        commit = Commit.from_dict(commit_data)
+
+        if commit.has_pr:
             # Use PR data from targeted_prs if available, otherwise create basic data
-            if pr_number in pr_lookup:
-                pr_data = pr_lookup[pr_number]
+            if commit.pr_number in pr_lookup:
+                pr_data = pr_lookup[commit.pr_number]
             else:
                 # PR not in targeted list (might not have v4.0 label)
                 pr_data = {
-                    "pr_number": pr_number,
-                    "title": commit.get("message", "").split(f"(#{pr_number})")[0].strip(),
-                    "author": commit.get("author", ""),
+                    "pr_number": commit.pr_number,
+                    "title": commit.extract_title(),
+                    "author": commit.author,
                     "master_sha": "",  # Don't know master SHA
                     "is_merged": True,  # If it's in the branch, it was merged
                 }
@@ -114,8 +97,8 @@ def get_prs_in_micro(
             prs_in_micro.append(
                 {
                     **pr_data,
-                    "commit_sha_in_micro": commit.get("sha"),  # SHA in the micro release
-                    "commit_date": commit.get("date"),
+                    "commit_sha_in_micro": commit.sha,  # SHA in the micro release
+                    "commit_date": commit.date,
                 }
             )
 

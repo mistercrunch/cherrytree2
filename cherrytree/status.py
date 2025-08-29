@@ -2,48 +2,20 @@
 
 import json
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 import typer
-import yaml
 from packaging import version
 from rich.console import Console
 from rich.table import Table
 
-from .git_utils import GitError, run_git_command
-from .utils import format_clickable_commit, format_clickable_pr
+from .git_interface import GitInterface
+from .micro_release import Micro
+from .minor import Minor
+from .tables import create_pr_table
+from .utils import format_clickable_commit
 
 console = Console()
-
-
-def create_pr_table(prs_data: list, title: str) -> Table:
-    """Create a reusable PR table with consistent formatting."""
-    pr_table = Table(title=title, expand=True)
-    pr_table.add_column("SHA", style="green", width=10)
-    pr_table.add_column("PR", style="cyan", width=8)
-    pr_table.add_column("Title", style="white")
-    pr_table.add_column("Author", style="dim", width=15)
-    pr_table.add_column("Status", style="yellow", width=8)
-
-    for pr in prs_data:
-        status = "Merged" if pr.get("is_merged", False) else "Open"
-        sha = pr.get("master_sha", "")[:8] if pr.get("master_sha") else ""
-        pr_number = pr.get("pr_number", "")
-
-        # Truncate long titles with ellipsis
-        title_text = pr.get("title", "")
-        if len(title_text) > 60:
-            title_text = title_text[:57] + "..."
-
-        pr_table.add_row(
-            format_clickable_commit(sha) if sha else "",  # Clickable commit link
-            format_clickable_pr(pr_number),  # Clickable PR link
-            title_text,  # Truncated title with ellipsis
-            pr.get("author", "")[:15],
-            status,
-        )
-
-    return pr_table
 
 
 def get_release_branches(repo_path: Optional[str]) -> List[str]:
@@ -53,23 +25,10 @@ def get_release_branches(repo_path: Optional[str]) -> List[str]:
 
     try:
         repo_path_obj = Path(repo_path).resolve()
-        # Get remote branches that look like version numbers
-        branches_output = run_git_command(
-            ["branch", "-r", "--format=%(refname:short)"], repo_path_obj
-        )
+        git = GitInterface(repo_path_obj)
+        return git.get_release_branches()
 
-        release_branches = []
-        for branch in branches_output.split("\n"):
-            if branch.startswith("origin/"):
-                branch_name = branch.replace("origin/", "")
-                # Check if it looks like a version (e.g., "4.0", "4.1", "5.0")
-                parts = branch_name.split(".")
-                if len(parts) == 2 and parts[0].isdigit() and parts[1].isdigit():
-                    release_branches.append(branch_name)
-
-        return release_branches
-
-    except GitError:
+    except Exception:
         return []
 
 
@@ -97,35 +56,23 @@ def get_latest_minor_in_major(current_minor: str, repo_path: Optional[str]) -> O
     return None
 
 
-def load_release_state(
-    minor_version: str, releases_dir: str = "releases"
-) -> Optional[Dict[str, Any]]:
-    """Load release state from YAML file."""
-    yaml_file = Path(releases_dir) / f"{minor_version}.yml"
-
-    if not yaml_file.exists():
-        return None
-
-    try:
-        with open(yaml_file) as f:
-            data = yaml.safe_load(f)
-            return data.get("release_branch", {})
-    except Exception as e:
-        console.print(f"[red]Error reading {yaml_file}: {e}[/red]")
-        return None
+# Removed load_release_state - now handled by Minor.from_yaml()
 
 
 def display_minor_status(
     minor_version: str, format_type: str = "table", repo_path: Optional[str] = None
 ) -> None:
     """Display status of minor release branch."""
-    # Load release state
-    state = load_release_state(minor_version)
+    # Load minor release
+    minor = Minor.from_yaml(minor_version)
 
-    if not state:
+    if not minor:
         console.print(f"[red]No sync data found for {minor_version}[/red]")
         console.print(f"[yellow]Run: ct minor sync {minor_version}[/yellow]")
         raise typer.Exit(1)
+
+    # Convert to dict for backward compatibility with existing display logic
+    state = minor.to_dict()
 
     if format_type == "json":
         # Output JSON for programmatic use
@@ -161,8 +108,9 @@ def display_minor_status(
         table.add_column("Commit Date", style="white")
         table.add_column("Commits", style="yellow")
 
-        # Sort by tag date (oldest first) for correct chronological order
-        sorted_micros = sorted(micro_releases, key=lambda x: x.get("tag_date", ""))
+        # Sort by tag date (oldest first) for correct chronological order using Micro objects
+        micro_objects = [Micro.from_dict(data) for data in micro_releases]
+        sorted_micros = sorted(micro_objects, key=lambda x: x.tag_date)
         base_sha = state.get("base_sha", "")
         base_date = state.get("base_date", "")
 
@@ -176,17 +124,13 @@ def display_minor_status(
         )
 
         for i, micro in enumerate(sorted_micros):
-            tag_sha = micro.get("tag_sha", "")
-            tag_date = micro.get("tag_date", "")
-            commit_date = micro.get("commit_date", "")
-
             # Calculate commits since previous release (or base for first release)
             if i == 0:
                 # First release - count from base SHA to first tag
                 prev_sha = base_sha
             else:
                 # Subsequent releases - count from previous tag
-                prev_sha = sorted_micros[i - 1].get("tag_sha", base_sha)
+                prev_sha = sorted_micros[i - 1].tag_sha
 
             if repo_path:
                 try:
@@ -197,7 +141,7 @@ def display_minor_status(
                     # Count commits in range prev_sha..current_sha
                     repo_path_obj = Path(repo_path).resolve()
                     commit_count_output = run_git_command(
-                        ["rev-list", "--count", f"{prev_sha}..{tag_sha}"], repo_path_obj
+                        ["rev-list", "--count", f"{prev_sha}..{micro.tag_sha}"], repo_path_obj
                     )
                     count = int(commit_count_output.strip())
                     commit_count = f"{count} 🍒" if count > 0 else "0"
@@ -207,10 +151,10 @@ def display_minor_status(
                 commit_count = "? (no repo path)"
 
             table.add_row(
-                micro.get("version", ""),
-                tag_date[:10] if tag_date else "",  # Tag creation date
-                format_clickable_commit(tag_sha),  # Clickable commit link
-                commit_date[:10] if commit_date else "",  # Commit date
+                micro.format_clickable_tag(),  # Clickable tag link
+                micro.short_date,  # Tag creation date
+                micro.format_clickable_commit(),  # Clickable commit link
+                micro.short_date,  # Commit date (usually same as tag date)
                 commit_count,
             )
 
