@@ -1,7 +1,7 @@
 """Sync command implementation - build release branch state from git and GitHub."""
 
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict
 
 import typer
 from rich.console import Console
@@ -14,28 +14,17 @@ console = Console()
 
 def sync_command(
     minor_version: str,
-    repo_path: Optional[str] = typer.Option(None, "--repo", help="Local repository path"),
-    github_repo: str = typer.Option("apache/superset", "--github-repo", help="GitHub repository"),
-    output_dir: str = typer.Option("releases", "--output", help="Output directory for YAML files"),
-    dry_run: bool = typer.Option(
-        False, "--dry-run", help="Show what would be done without writing files"
-    ),
+    github_repo: str = "apache/superset",
+    output_dir: str = "releases",
+    dry_run: bool = False,
 ) -> None:
     """Sync release branch state from git and GitHub."""
-
-    if not repo_path:
-        console.print("[red]Error: --repo path is required[/red]")
-        console.print("Set with: cherrytree config set-repo /path/to/superset")
-        console.print("Or use: cherrytree sync 5.0 --repo /path/to/superset")
-        raise typer.Exit(1) from None
-
-    repo_path_obj = Path(repo_path).resolve()
-    if not repo_path_obj.exists():
-        console.print(f"[red]Error: Repository path does not exist: {repo_path_obj}[/red]")
-        raise typer.Exit(1) from None
-
-    if not (repo_path_obj / ".git").exists():
-        console.print(f"[red]Error: Not a git repository: {repo_path_obj}[/red]")
+    try:
+        repo_path_obj = Path.cwd().resolve()
+        # GitInterface will check if it's a git repo
+    except Exception:
+        console.print("[red]Error: Current directory is not a git repository[/red]")
+        console.print("[yellow]Please run cherrytree from within a git repository.[/yellow]")
         raise typer.Exit(1) from None
 
     try:

@@ -1,7 +1,6 @@
 """Minor release status command implementation."""
 
 import json
-from pathlib import Path
 from typing import List, Optional
 
 import typer
@@ -18,27 +17,23 @@ from .utils import format_clickable_commit
 console = Console()
 
 
-def get_release_branches(repo_path: Optional[str]) -> List[str]:
+def get_release_branches() -> List[str]:
     """Get all release branches from git repository."""
-    if not repo_path:
-        return []
-
     try:
-        repo_path_obj = Path(repo_path).resolve()
-        git = GitInterface(repo_path_obj)
+        git = GitInterface()
         return git.get_release_branches()
 
     except Exception:
         return []
 
 
-def get_latest_minor_in_major(current_minor: str, repo_path: Optional[str]) -> Optional[str]:
+def get_latest_minor_in_major(current_minor: str) -> Optional[str]:
     """Find the latest minor version in the same major as current_minor."""
     # Extract major version (e.g., "4.1" -> "4")
     major = current_minor.split(".")[0]
 
     # Get all release branches
-    all_branches = get_release_branches(repo_path)
+    all_branches = get_release_branches()
 
     # Filter to same major version
     same_major_branches = [b for b in all_branches if b.startswith(f"{major}.")]
@@ -59,9 +54,7 @@ def get_latest_minor_in_major(current_minor: str, repo_path: Optional[str]) -> O
 # Removed load_release_state - now handled by Minor.from_yaml()
 
 
-def display_minor_status(
-    minor_version: str, format_type: str = "table", repo_path: Optional[str] = None
-) -> None:
+def display_minor_status(minor_version: str, format_type: str = "table") -> None:
     """Display status of minor release branch."""
     # Load minor release
     minor = Minor.from_yaml(minor_version)
@@ -132,23 +125,18 @@ def display_minor_status(
                 # Subsequent releases - count from previous tag
                 prev_sha = sorted_micros[i - 1].tag_sha
 
-            if repo_path:
-                try:
-                    from pathlib import Path
+            try:
+                from .git_interface import GitInterface
 
-                    from .git_utils import run_git_command
-
-                    # Count commits in range prev_sha..current_sha
-                    repo_path_obj = Path(repo_path).resolve()
-                    commit_count_output = run_git_command(
-                        ["rev-list", "--count", f"{prev_sha}..{micro.tag_sha}"], repo_path_obj
-                    )
-                    count = int(commit_count_output.strip())
-                    commit_count = f"{count} 🍒" if count > 0 else "0"
-                except Exception:
-                    commit_count = "?"
-            else:
-                commit_count = "? (no repo path)"
+                # Count commits in range prev_sha..current_sha
+                git = GitInterface()
+                commit_count_output = git.run_command(
+                    ["rev-list", "--count", f"{prev_sha}..{micro.tag_sha}"]
+                )
+                count = int(commit_count_output.strip())
+                commit_count = f"{count} 🍒" if count > 0 else "0"
+            except Exception:
+                commit_count = "?"
 
             table.add_row(
                 micro.format_clickable_tag(),  # Clickable tag link
@@ -163,7 +151,7 @@ def display_minor_status(
         console.print("[yellow]No micro releases found[/yellow]")
 
     # Check if there's a newer minor in the same major before showing PRs
-    latest_minor = get_latest_minor_in_major(minor_version, repo_path)
+    latest_minor = get_latest_minor_in_major(minor_version)
 
     # Targeted PRs table - show PRs that need processing
     targeted_prs = state.get("targeted_prs", [])

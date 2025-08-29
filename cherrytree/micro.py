@@ -1,7 +1,6 @@
 """Micro release management commands."""
 
-from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import typer
 from rich.console import Console
@@ -15,10 +14,10 @@ from .tables import create_pr_table
 console = Console()
 
 
-def get_commits_in_range(repo_path: Path, start_sha: str, end_sha: str) -> List[Dict[str, Any]]:
+def get_commits_in_range(start_sha: str, end_sha: str) -> List[Dict[str, Any]]:
     """Get commits between two SHAs."""
     try:
-        git = GitInterface(repo_path, console)
+        git = GitInterface(console=console)
         commits = git.get_commits_in_range(start_sha, end_sha)
 
         # Convert to dict format for backward compatibility
@@ -33,9 +32,7 @@ def get_commits_in_range(repo_path: Path, start_sha: str, end_sha: str) -> List[
         return []
 
 
-def get_prs_in_micro(
-    minor_version: str, micro_version: str, repo_path: str
-) -> List[Dict[str, Any]]:
+def get_prs_in_micro(minor_version: str, micro_version: str) -> List[Dict[str, Any]]:
     """Get PRs that are included in a specific micro release."""
     minor = Minor.from_yaml(minor_version)
 
@@ -54,7 +51,6 @@ def get_prs_in_micro(
         return []
 
     # Get commits in this micro release
-    repo_path_obj = Path(repo_path).resolve()
     target_sha = target_micro.tag_sha
     base_sha = minor.base_sha
 
@@ -71,7 +67,7 @@ def get_prs_in_micro(
         prev_sha = sorted_micros[target_index - 1].tag_sha
 
     # Get commits between previous and current
-    commits_in_micro = get_commits_in_range(repo_path_obj, prev_sha, target_sha)
+    commits_in_micro = get_commits_in_range(prev_sha, target_sha)
 
     # Map commits to PRs (include all commits with PR numbers, not just targeted ones)
     pr_lookup = {pr.get("pr_number"): pr for pr in minor.targeted_prs}
@@ -105,9 +101,7 @@ def get_prs_in_micro(
     return prs_in_micro
 
 
-def display_micro_status(
-    micro_version: str, format_type: str = "table", repo_path: Optional[str] = None
-) -> None:
+def display_micro_status(micro_version: str, format_type: str = "table") -> None:
     """Display status of a specific micro release."""
     # Extract minor version from micro (e.g., "6.0.1" -> "6.0")
     parts = micro_version.split(".")
@@ -118,13 +112,8 @@ def display_micro_status(
 
     minor_version = f"{parts[0]}.{parts[1]}"
 
-    if not repo_path:
-        console.print("[red]Repository path required for micro status[/red]")
-        console.print("[yellow]Use: ct micro status 6.0.1 --repo /path/to/superset[/yellow]")
-        raise typer.Exit(1)
-
     # Get PRs in this micro release
-    prs_in_micro = get_prs_in_micro(minor_version, micro_version, repo_path)
+    prs_in_micro = get_prs_in_micro(minor_version, micro_version)
 
     if format_type == "json":
         import json

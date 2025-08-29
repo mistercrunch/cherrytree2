@@ -7,7 +7,8 @@ from rich import print
 from rich.console import Console
 
 from . import __version__
-from .config import get_repo_path, set_github_command, set_repo_command, show_config_command
+from .branch_detection import ensure_release_branch
+from .config import set_github_command, show_config_command
 from .micro import display_micro_status
 from .next import display_next_command
 from .status import display_minor_status
@@ -33,9 +34,11 @@ def main_callback(ctx: typer.Context) -> None:
         raise typer.Exit()
 
 
-# Create minor subcommand group
-minor_app = typer.Typer(name="minor", help="Manage minor release branches", no_args_is_help=True)
-app.add_typer(minor_app)
+@app.command("overview")
+def overview() -> None:
+    """Show overview of all minor releases."""
+    display_minors_overview()
+
 
 # Create micro subcommand group
 micro_app = typer.Typer(
@@ -44,12 +47,12 @@ micro_app = typer.Typer(
 app.add_typer(micro_app)
 
 
-@minor_app.command("sync")
-def minor_sync(
+@app.command("sync")
+def sync(
     minor_version: Optional[str] = typer.Argument(
-        None, help="Minor version to sync (e.g., 5.0, 4.2). Use --all to sync all valid minors"
+        None,
+        help="Minor version to sync (e.g., 5.0, 4.2). Use --all to sync all valid minors. If not provided, uses current branch",
     ),
-    repo_path: Optional[str] = typer.Option(None, "--repo", help="Local repository path"),
     github_repo: str = typer.Option("apache/superset", "--github-repo", help="GitHub repository"),
     output_dir: str = typer.Option("releases", "--output", help="Output directory for YAML files"),
     dry_run: bool = typer.Option(
@@ -60,18 +63,14 @@ def minor_sync(
     ),
 ) -> None:
     """Sync release branch state from git and GitHub."""
-    # Use configured repo path if not provided
-    if not repo_path:
-        repo_path = get_repo_path()
-
     # Validate arguments
     if sync_all and minor_version:
         console.print("[red]Error: Cannot specify both minor version and --all flag[/red]")
         raise typer.Exit(1)
 
+    # If no minor version provided and not --all, detect from current branch
     if not sync_all and not minor_version:
-        console.print("[red]Error: Must specify either a minor version or use --all flag[/red]")
-        raise typer.Exit(1)
+        minor_version = ensure_release_branch(console)
 
     if sync_all:
         # Import here to avoid circular imports
@@ -89,33 +88,38 @@ def minor_sync(
         for i, minor in enumerate(minors, 1):
             console.print(f"[bold cyan]({i}/{len(minors)}) Syncing {minor}...[/bold cyan]")
             try:
-                sync_command(minor, repo_path, github_repo, output_dir, dry_run)
+                sync_command(minor, github_repo, output_dir, dry_run)
                 console.print(f"[green]✅ Successfully synced {minor}[/green]")
             except Exception as e:
                 console.print(f"[red]❌ Failed to sync {minor}: {e}[/red]")
             console.print()
     else:
         assert minor_version is not None  # Validated above
-        sync_command(minor_version, repo_path, github_repo, output_dir, dry_run)
+        sync_command(minor_version, github_repo, output_dir, dry_run)
 
 
-@minor_app.command("status")
-def minor_status(
-    minor_version: str = typer.Argument(help="Minor version to show status for (e.g., 5.0, 4.2)"),
+@app.command("status")
+def status(
+    minor_version: Optional[str] = typer.Argument(
+        None,
+        help="Minor version to show status for (e.g., 5.0, 4.2). If not provided, uses current branch",
+    ),
     format_type: str = typer.Option("table", "--format", help="Output format: table or json"),
-    repo_path: Optional[str] = typer.Option(None, "--repo", help="Local repository path"),
 ) -> None:
     """Show status of minor release branch."""
-    # Use configured repo path if not provided
-    if not repo_path:
-        repo_path = get_repo_path()
+    # If no minor version provided, detect from current branch
+    if not minor_version:
+        minor_version = ensure_release_branch(console)
 
-    display_minor_status(minor_version, format_type, repo_path)
+    display_minor_status(minor_version, format_type)
 
 
-@minor_app.command("next")
-def minor_next(
-    minor_version: str = typer.Argument(help="Minor version to get next PR for (e.g., 5.0, 4.2)"),
+@app.command("next")
+def next_pr(
+    minor_version: Optional[str] = typer.Argument(
+        None,
+        help="Minor version to get next PR for (e.g., 5.0, 4.2). If not provided, uses current branch",
+    ),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Show detailed PR information"),
     skip_open: bool = typer.Option(
         False, "--skip-open", help="Skip open PRs, only show merged PRs"
@@ -123,7 +127,50 @@ def minor_next(
     format_type: str = typer.Option("text", "--format", help="Output format: text or json"),
 ) -> None:
     """Get next PR to cherry-pick in chronological order."""
+    # If no minor version provided, detect from current branch
+    if not minor_version:
+        minor_version = ensure_release_branch(console)
+
     display_next_command(minor_version, verbose, skip_open, format_type)
+
+
+@app.command("analyze-next")
+def analyze_next(
+    minor_version: Optional[str] = typer.Argument(
+        None,
+        help="Minor version to analyze next PR for (e.g., 5.0, 4.2). If not provided, uses current branch",
+    ),
+    format_type: str = typer.Option("table", "--format", help="Output format: table or json"),
+) -> None:
+    """Analyze potential conflicts for the next PR to cherry-pick."""
+    from .conflict_analysis import analyze_next_pr_conflicts
+
+    # If no minor version provided, detect from current branch
+    if not minor_version:
+        minor_version = ensure_release_branch(console)
+
+    analyze_next_pr_conflicts(minor_version, format_type)
+
+
+@app.command("chain")
+def chain(
+    minor_version: Optional[str] = typer.Argument(
+        None,
+        help="Minor version to cherry-pick chain for (e.g., 5.0, 4.2). If not provided, uses current branch",
+    ),
+    auto_clean: bool = typer.Option(
+        False, "--auto-clean", help="Automatically cherry-pick clean commits without prompting"
+    ),
+    max_picks: int = typer.Option(10, "--max", help="Maximum number of cherry-picks to attempt"),
+) -> None:
+    """Interactive cherry-pick chain with conflict analysis."""
+    from .conflict_analysis import run_cherry_pick_chain
+
+    # If no minor version provided, detect from current branch
+    if not minor_version:
+        minor_version = ensure_release_branch(console)
+
+    run_cherry_pick_chain(minor_version, auto_clean, max_picks)
 
 
 @micro_app.command("status")
@@ -132,25 +179,14 @@ def micro_status(
         help="Micro version to show status for (e.g., 6.0.1, 4.0.2rc1)"
     ),
     format_type: str = typer.Option("table", "--format", help="Output format: table or json"),
-    repo_path: Optional[str] = typer.Option(None, "--repo", help="Local repository path"),
 ) -> None:
     """Show PRs included in a specific micro release."""
-    # Use configured repo path if not provided
-    if not repo_path:
-        repo_path = get_repo_path()
-
-    display_micro_status(micro_version, format_type, repo_path)
+    display_micro_status(micro_version, format_type)
 
 
 # Create config subcommand group
 config_app = typer.Typer(name="config", help="Manage cherrytree configuration")
 app.add_typer(config_app)
-
-
-@config_app.command("set-repo")
-def set_repo(repo_path: str = typer.Argument(help="Path to local git repository")) -> None:
-    """Set the local repository path."""
-    set_repo_command(repo_path)
 
 
 @config_app.command("set-github")
