@@ -29,32 +29,34 @@ pre-commit install
 ### Basic Workflow
 
 ```bash
-# One-time setup
-ct config set-repo /path/to/superset
+# Prerequisites: Local Superset repo and GitHub CLI authentication
+# cd /path/to/your/superset && gh auth login
 
 # Daily release management workflow
-ct minor sync 6.0                    # Refresh state (10-30s)
-ct minor status 6.0                  # Review timeline + pending PRs
-ct minor next 6.0                    # Get next SHA: 836540e8
-ct minor next 6.0 -v                 # Full details + cherry-pick command
+# First, check out the release branch you want to work on
+git checkout 6.0                     # Switch to release branch
+
+ct sync                              # Refresh state (10-30s)
+ct status                            # Review timeline + pending PRs
+ct next                              # Get next SHA: 836540e8
+ct next -v                           # Full details + cherry-pick command
 git cherry-pick -x 836540e8          # Execute (human or Claude)
 ```
 
 ## Production-Ready Commands
 
 ### Core Workflow
-- **`ct minor sync <version>`** - Collect GitHub + git state (30s for 195 PRs)
-- **`ct minor status <version>`** - Timeline + PR table with clickable links
-- **`ct minor next <version>`** - Get next cherry-pick SHA (chronological order)
+- **`ct sync`** - Collect GitHub + git state for current branch (30s for 195 PRs)
+- **`ct status`** - Timeline + PR table with clickable links
+- **`ct next`** - Get next cherry-pick SHA (chronological order)
 - **`ct micro status <version>`** - PRs in specific micro release
-- **`ct version`** - Show version
 
-### Configuration
-- **`ct config set-repo <path>`** - Set local repo path
-- **`ct config set-github <repo>`** - Set GitHub repo
-- **`ct config show`** - Display current config
+### Prerequisites
+- **Local Superset repository**: Clone apache/superset locally
+- **GitHub CLI authentication**: Run `gh auth login` for API access
+- **Release branch**: Check out the release branch you want to work on
 
-**CLI shortcuts**: Both `ct` and `cherrytree` work identically
+**Important**: Cherrytree works on your current git branch. Always `git checkout <release-branch>` first.
 
 ## Experimental Commands
 
@@ -180,8 +182,8 @@ Cherrytree v2 is designed for seamless human-Claude collaboration:
 
 ```bash
 # Claude can analyze structured data
-ct minor next 6.0 --format json     # Machine-readable output
-ct minor status 6.0 --format json   # Full state for analysis
+ct next --format json               # Machine-readable output
+ct status --format json             # Full state for analysis
 
 # Claude can reason about PRs
 # "PR #34871 is test-related, low risk, safe to cherry-pick"

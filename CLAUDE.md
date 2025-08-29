@@ -45,16 +45,13 @@ make clean                  # Clean build artifacts
 
 #### Stable Commands (Production Ready)
 ```bash
-# Configuration (one-time setup)
-ct config set-repo /path/to/superset
-ct config show
-
-# Core workflow commands
-ct minor sync 6.0           # Sync release branch state from GitHub + git
-ct minor status 6.0         # Show timeline + PR processing table
-ct minor next 6.0           # Get next SHA to cherry-pick
-ct micro status 6.0.0rc1    # Show PRs in specific micro release
-ct version                  # Show version
+# Prerequisites: cd /path/to/superset && gh auth login
+# Core workflow commands (work on current git branch)
+git checkout 6.0             # Check out release branch first
+ct sync                      # Sync release branch state from GitHub + git
+ct status                    # Show timeline + PR processing table
+ct next                      # Get next SHA to cherry-pick
+ct micro status 6.0.0rc1     # Show PRs in specific micro release
 ```
 
 ## Architecture
@@ -87,10 +84,8 @@ ct minor/            # Minor release management
 ct micro/            # Micro release analysis
 └── status           # PRs in specific micro release
 
-ct config/           # Configuration management
-├── set-repo         # Set local repo path
-├── set-github       # Set GitHub repo
-└── show             # Display current config
+# No config commands - use git directly
+# Work on current git branch, ensure gh auth login
 
 ct version           # Show version
 ```
@@ -181,14 +176,14 @@ ct version           # Show version
 
 ### Typical Release Manager Workflow
 ```bash
-# One-time setup
-ct config set-repo /path/to/superset
+# Prerequisites: cd /path/to/superset && gh auth login
 
-# Daily workflow
-ct minor sync 6.0                    # Refresh state (10-30s)
-ct minor status 6.0                  # Review timeline + pending PRs
-ct minor next 6.0                    # Get next SHA: 836540e8
-ct minor next 6.0 -v                 # Full details + cherry-pick command
+# Daily workflow - work on release branch
+git checkout 6.0                    # Check out the release branch
+ct sync                              # Refresh state (10-30s)
+ct status                            # Review timeline + pending PRs
+ct next                              # Get next SHA: 836540e8
+ct next -v                           # Full details + cherry-pick command
 git cherry-pick -x 836540e8          # Execute (human or Claude)
 ```
 
