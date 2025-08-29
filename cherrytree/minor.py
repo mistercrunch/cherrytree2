@@ -116,8 +116,28 @@ class Minor:
         }
 
     def get_prs(self) -> List[PullRequest]:
-        """Get all targeted PRs as PullRequest objects."""
-        return [PullRequest.from_dict(pr_data) for pr_data in self.targeted_prs]
+        """Get all targeted PRs as PullRequest objects with enriched merge dates."""
+        # Build PR number to commit date mapping
+        pr_to_date = {}
+        for commit_data in self.commits_in_branch:
+            pr_number = commit_data.get("pr_number")
+            if pr_number:
+                pr_to_date[pr_number] = commit_data.get("date", "")
+
+        # Create enriched PullRequest objects
+        enriched_prs = []
+        for pr_data in self.targeted_prs:
+            # Add merge date from commits data
+            pr_number = pr_data.get("pr_number")
+            merge_date = pr_to_date.get(pr_number, "")
+
+            # Create enriched PR data
+            enriched_data = pr_data.copy()
+            enriched_data["merge_date"] = merge_date
+
+            enriched_prs.append(PullRequest.from_dict(enriched_data))
+
+        return enriched_prs
 
     def get_merged_prs_objects(self) -> List[PullRequest]:
         """Get all merged PRs as PullRequest objects."""

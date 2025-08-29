@@ -174,6 +174,7 @@ def create_pr_table(prs_data: list, title: str) -> Table:
     """Create a reusable PR table with consistent formatting."""
     pr_table = Table(title=title, expand=True)
     pr_table.add_column("SHA", style="green", width=10)
+    pr_table.add_column("Merged", style="dim", width=10)
     pr_table.add_column("PR", style="cyan", width=8)
     pr_table.add_column("Title", style="white")
     pr_table.add_column("Author", style="dim", width=15)
@@ -186,6 +187,7 @@ def create_pr_table(prs_data: list, title: str) -> Table:
 
         pr_table.add_row(
             pr.format_clickable_commit() if pr.master_sha else "",  # Clickable commit link
+            pr.display_merge_date(),  # Merge date from commit data
             pr.format_clickable_pr(),  # Clickable PR link
             pr.short_title(),  # Truncated title with ellipsis
             pr.display_author(),

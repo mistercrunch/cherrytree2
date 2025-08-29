@@ -19,6 +19,7 @@ class PullRequest:
         author: str,
         master_sha: str,
         is_merged: bool,
+        merge_date: str = "",
     ):
         """Initialize PullRequest with required fields from YAML structure."""
         self.pr_number = pr_number
@@ -26,6 +27,7 @@ class PullRequest:
         self.author = author
         self.master_sha = master_sha
         self.is_merged = is_merged
+        self.merge_date = merge_date
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "PullRequest":
@@ -36,6 +38,7 @@ class PullRequest:
             author=data.get("author", ""),
             master_sha=data.get("master_sha", ""),
             is_merged=data.get("is_merged", False),
+            merge_date=data.get("merge_date", ""),
         )
 
     def to_dict(self) -> Dict[str, Any]:
@@ -46,6 +49,7 @@ class PullRequest:
             "author": self.author,
             "master_sha": self.master_sha,
             "is_merged": self.is_merged,
+            "merge_date": self.merge_date,
         }
 
     def github_url(self, repo: str = "apache/superset") -> str:
@@ -92,6 +96,20 @@ class PullRequest:
         if len(self.author) > max_length:
             return self.author[:max_length]
         return self.author
+
+    def display_merge_date(self) -> str:
+        """Format merge date for table display (YYYY-MM-DD)."""
+        if not self.merge_date:
+            return ""
+        try:
+            from datetime import datetime
+
+            # Parse ISO date and format as YYYY-MM-DD
+            dt = datetime.fromisoformat(self.merge_date.replace("Z", "+00:00"))
+            return dt.strftime("%Y-%m-%d")
+        except Exception:
+            # Return first 10 characters if it looks like a date
+            return self.merge_date[:10] if len(self.merge_date) >= 10 else self.merge_date
 
     @property
     def status_text(self) -> str:

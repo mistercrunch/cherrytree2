@@ -153,25 +153,28 @@ def display_minor_status(minor_version: str, format_type: str = "table") -> None
     # Check if there's a newer minor in the same major before showing PRs
     latest_minor = get_latest_minor_in_major(minor_version)
 
-    # Targeted PRs table - show PRs that need processing
-    targeted_prs = state.get("targeted_prs", [])
-    if targeted_prs:
-        merged_count = sum(1 for pr in targeted_prs if pr.get("is_merged", False))
-        open_count = len(targeted_prs) - merged_count
+    # Get enriched PRs with merge dates
+    enriched_prs = minor.get_prs()
+    if enriched_prs:
+        merged_count = sum(1 for pr in enriched_prs if pr.is_merged)
+        open_count = len(enriched_prs) - merged_count
         major = minor_version.split(".")[0]
 
         if latest_minor:
             # There's a newer minor - redirect user
             console.print(
-                f"\n[yellow]{len(targeted_prs)} 🍒 targeting v{major}.0 are for {latest_minor} (latest minor)[/yellow]"
+                f"\n[yellow]{len(enriched_prs)} 🍒 targeting v{major}.0 are for {latest_minor} (latest minor)[/yellow]"
             )
-            console.print(f"[dim]Run `ct minor status {latest_minor}` to view the details[/dim]")
+            console.print(f"[dim]Run `ct status {latest_minor}` to view the details[/dim]")
         else:
             # This is the latest minor - show the PRs
-            console.print(f"\n[bold]PRs to Process ({len(targeted_prs)} total):[/bold]")
+            console.print(f"\n[bold]PRs to Process ({len(enriched_prs)} total):[/bold]")
+
+            # Convert enriched PullRequest objects back to dict for table
+            enriched_prs_data = [pr.to_dict() for pr in enriched_prs]
 
             # Create and display PRs table using reusable function
-            pr_table = create_pr_table(targeted_prs, f"PRs Labeled for {minor_version}")
+            pr_table = create_pr_table(enriched_prs_data, f"PRs Labeled for {minor_version}")
             console.print(pr_table)
 
             # Summary
