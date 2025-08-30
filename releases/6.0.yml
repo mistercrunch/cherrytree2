@@ -3,6 +3,7 @@ release_branch:
   branch_name: '6.0'
   base_sha: 1f482b42
   base_date: 2025-08-18 14:04:26 -0700
+  branch_head_sha: ''
   targeted_prs:
   - pr_number: 34871
     title: 'fix(tests): Mock MessageChannel to prevent Jest hanging from rc-overflow'

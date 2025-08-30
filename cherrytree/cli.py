@@ -105,13 +105,16 @@ def status(
         help="Minor version to show status for (e.g., 5.0, 4.2). If not provided, uses current branch",
     ),
     format_type: str = typer.Option("table", "--format", help="Output format: table or json"),
+    limit: Optional[int] = typer.Option(
+        None, "--limit", "-l", help="Maximum number of PRs to display"
+    ),
 ) -> None:
     """Show status of minor release branch."""
     # If no minor version provided, detect from current branch
     if not minor_version:
         minor_version = ensure_release_branch(console)
 
-    display_minor_status(minor_version, format_type)
+    display_minor_status(minor_version, format_type, limit)
 
 
 @app.command("next")
@@ -134,6 +137,31 @@ def next_pr(
     display_next_command(minor_version, verbose, skip_open, format_type)
 
 
+@app.command("analyze")
+def analyze(
+    minor_version: Optional[str] = typer.Argument(
+        None,
+        help="Minor version to analyze all PRs for (e.g., 5.0, 4.2). If not provided, uses current branch",
+    ),
+    format_type: str = typer.Option("table", "--format", help="Output format: table or json"),
+    complexity_filter: Optional[str] = typer.Option(
+        None, "--complexity", help="Filter by complexity: clean,simple,moderate,complex"
+    ),
+    limit: int = typer.Option(50, "--limit", "-l", help="Maximum number of PRs to analyze"),
+    verbose: bool = typer.Option(
+        False, "--verbose", "-v", help="Show raw merge-tree output for debugging"
+    ),
+) -> None:
+    """Bulk conflict analysis showing predictions for all PRs in a sortable table."""
+    from .conflict_analysis import analyze_all_pr_conflicts
+
+    # If no minor version provided, detect from current branch
+    if not minor_version:
+        minor_version = ensure_release_branch(console)
+
+    analyze_all_pr_conflicts(minor_version, format_type, complexity_filter, limit, verbose)
+
+
 @app.command("analyze-next")
 def analyze_next(
     minor_version: Optional[str] = typer.Argument(
@@ -141,6 +169,9 @@ def analyze_next(
         help="Minor version to analyze next PR for (e.g., 5.0, 4.2). If not provided, uses current branch",
     ),
     format_type: str = typer.Option("table", "--format", help="Output format: table or json"),
+    verbose: bool = typer.Option(
+        False, "--verbose", "-v", help="Show raw merge-tree output for debugging"
+    ),
 ) -> None:
     """Analyze potential conflicts for the next PR to cherry-pick."""
     from .conflict_analysis import analyze_next_pr_conflicts
@@ -149,7 +180,7 @@ def analyze_next(
     if not minor_version:
         minor_version = ensure_release_branch(console)
 
-    analyze_next_pr_conflicts(minor_version, format_type)
+    analyze_next_pr_conflicts(minor_version, format_type, verbose)
 
 
 @app.command("chain")

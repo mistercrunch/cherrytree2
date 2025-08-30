@@ -28,13 +28,15 @@ def display_next_command(
     minor_version: str, verbose: bool = False, skip_open: bool = False, format_type: str = "text"
 ) -> None:
     """Display next PR to work on."""
-    # Load minor release
-    minor = Minor.from_yaml(minor_version)
+    # Check sync status first
+    from .sync_validation import check_sync_and_offer_resync
 
-    if not minor:
-        console.print(f"[red]No sync data found for {minor_version}[/red]")
-        console.print(f"[yellow]Run: ct minor sync {minor_version}[/yellow]")
+    if not check_sync_and_offer_resync(minor_version, console):
         raise typer.Exit(1)
+
+    # Load minor release (we know it exists from sync check)
+    minor = Minor.from_yaml(minor_version)
+    assert minor is not None
 
     next_pr = minor.get_next_pr(skip_open, as_object=False)
 

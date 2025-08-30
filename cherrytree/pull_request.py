@@ -20,6 +20,7 @@ class PullRequest:
         master_sha: str,
         is_merged: bool,
         merge_date: str = "",
+        has_database_migration: bool = False,
     ):
         """Initialize PullRequest with required fields from YAML structure."""
         self.pr_number = pr_number
@@ -28,6 +29,7 @@ class PullRequest:
         self.master_sha = master_sha
         self.is_merged = is_merged
         self.merge_date = merge_date
+        self.has_database_migration = has_database_migration
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "PullRequest":
@@ -39,6 +41,7 @@ class PullRequest:
             master_sha=data.get("master_sha", ""),
             is_merged=data.get("is_merged", False),
             merge_date=data.get("merge_date", ""),
+            has_database_migration=data.get("has_database_migration", False),
         )
 
     def to_dict(self) -> Dict[str, Any]:
@@ -50,6 +53,7 @@ class PullRequest:
             "master_sha": self.master_sha,
             "is_merged": self.is_merged,
             "merge_date": self.merge_date,
+            "has_database_migration": self.has_database_migration,
         }
 
     def github_url(self, repo: str = "apache/superset") -> str:
@@ -150,6 +154,9 @@ class PullRequest:
                 if count % 50 == 0:
                     console.print(f"[dim]  Processed {count} open PRs...[/dim]")
 
+                # Check if PR has database migration label
+                has_db_migration = any(label.name == "risk:db-migration" for label in issue.labels)
+
                 prs.append(
                     cls(
                         pr_number=issue.number,
@@ -157,6 +164,7 @@ class PullRequest:
                         author=issue.user.login,
                         master_sha="",
                         is_merged=False,
+                        has_database_migration=has_db_migration,
                     )
                 )
 
@@ -173,6 +181,9 @@ class PullRequest:
                 if merged_count % 50 == 0:
                     console.print(f"[dim]  Processed {merged_count} merged PRs...[/dim]")
 
+                # Check if PR has database migration label
+                has_db_migration = any(label.name == "risk:db-migration" for label in issue.labels)
+
                 prs.append(
                     cls(
                         pr_number=issue.number,
@@ -180,6 +191,7 @@ class PullRequest:
                         author=issue.user.login,
                         master_sha="",  # Will get from git log
                         is_merged=True,
+                        has_database_migration=has_db_migration,
                     )
                 )
 

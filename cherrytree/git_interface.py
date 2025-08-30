@@ -46,6 +46,42 @@ class GitInterface:
         except subprocess.CalledProcessError as e:
             raise GitError(f"Git command failed: git {' '.join(args)}\nError: {e.stderr}") from e
 
+    def run_command_binary_safe(self, args: List[str], allow_failure: bool = False) -> str:
+        """Execute git command and return stdout, safely handling binary content."""
+        try:
+            result = subprocess.run(
+                ["git"] + args, cwd=self.repo_path, capture_output=True, check=not allow_failure
+            )
+
+            # For merge-tree, exit code 1 means conflicts exist (not an error)
+            if allow_failure and result.returncode == 1 and args[0] == "merge-tree":
+                # This is expected for merge-tree with conflicts
+                pass
+            elif allow_failure and result.returncode != 0:
+                # Other non-zero exit codes are real errors
+                try:
+                    stderr = result.stderr.decode("utf-8") if result.stderr else ""
+                except UnicodeDecodeError:
+                    stderr = str(result.stderr) if result.stderr else ""
+                raise GitError(f"Git command failed: git {' '.join(args)}\nError: {stderr}")
+
+            # Try UTF-8 decode first
+            try:
+                return result.stdout.decode("utf-8").strip()
+            except UnicodeDecodeError:
+                # Handle binary content by using errors='replace' or 'ignore'
+                decoded = result.stdout.decode("utf-8", errors="replace").strip()
+                # For merge-tree output with binary files, we can still parse the textual parts
+                return decoded
+
+        except subprocess.CalledProcessError as e:
+            # Try to decode stderr for error message
+            try:
+                stderr = e.stderr.decode("utf-8") if e.stderr else ""
+            except UnicodeDecodeError:
+                stderr = str(e.stderr) if e.stderr else ""
+            raise GitError(f"Git command failed: git {' '.join(args)}\nError: {stderr}") from e
+
     # Branch Management Operations
     def check_branch_exists(self, branch: str) -> bool:
         """Check if branch exists locally."""
@@ -154,8 +190,9 @@ class GitInterface:
             if len(parts) >= 3:
                 sha, message, date = parts
                 # Extract PR number from commit message if present
-                pr_match = re.search(r"#(\d+)", message)
-                pr_number = int(pr_match.group(1)) if pr_match else None
+                # Use findall to get all PR numbers, take the last one (handles reverts)
+                pr_matches = re.findall(r"#(\d+)", message)
+                pr_number = int(pr_matches[-1]) if pr_matches else None
 
                 commits.append(Commit(sha=sha, message=message, date=date, pr_number=pr_number))
 
@@ -205,7 +242,9 @@ class GitInterface:
             return []
 
     # PR Mapping Operations
-    def build_pr_sha_mapping(self, pr_numbers: List[int]) -> Tuple[Dict[int, str], List[int]]:
+    def build_pr_sha_mapping(
+        self, pr_numbers: List[int]
+    ) -> Tuple[Dict[int, str], List[int], Dict[int, str]]:
         """Build mapping of PR number → merge commit SHA by parsing git log."""
         try:
             # Get commits from master branch that mention PR numbers
@@ -215,7 +254,7 @@ class GitInterface:
                     "log",
                     "master",
                     "--oneline",
-                    "--format=%h|%s",
+                    "--format=%h|%s|%ci",  # Add commit date
                     "--grep=#[0-9]",
                     "--extended-regexp",
                     "--reverse",  # Oldest commits first for proper dependency order
@@ -223,17 +262,18 @@ class GitInterface:
             )
 
             pr_to_sha = {}
+            pr_to_date = {}  # Add date mapping
             pr_chronological_order = []
 
             for line in log_output.split("\n"):
                 if not line.strip():
                     continue
 
-                parts = line.split("|", 1)
-                if len(parts) != 2:
+                parts = line.split("|", 2)
+                if len(parts) != 3:
                     continue
 
-                sha, message = parts
+                sha, message, date = parts
 
                 # Extract all PR numbers from commit message
                 pr_matches = re.findall(r"#(\d+)", message)
@@ -243,13 +283,14 @@ class GitInterface:
                     # Only include PRs we're looking for
                     if pr_number in pr_numbers and pr_number not in pr_to_sha:
                         pr_to_sha[pr_number] = sha[:8]  # 8-digit SHA
+                        pr_to_date[pr_number] = date  # Merge date
                         pr_chronological_order.append(pr_number)
 
-            return pr_to_sha, pr_chronological_order
+            return pr_to_sha, pr_chronological_order, pr_to_date
 
         except GitError as e:
             self.console.print(f"[yellow]Warning: Failed to parse git log: {e}[/yellow]")
-            return {}, []
+            return {}, [], {}
 
     def get_release_branches(self) -> List[str]:
         """Get all release branches from git repository."""
@@ -314,8 +355,9 @@ class GitInterface:
                     sha, message, author, date = parts
 
                     # Extract PR number from commit message
-                    pr_match = re.search(r"#(\d+)", message)
-                    pr_number = int(pr_match.group(1)) if pr_match else None
+                    # Use findall to get all PR numbers, take the last one (handles reverts)
+                    pr_matches = re.findall(r"#(\d+)", message)
+                    pr_number = int(pr_matches[-1]) if pr_matches else None
 
                     commits.append(
                         Commit(
@@ -329,17 +371,121 @@ class GitInterface:
             return []
 
     # Conflict Analysis Operations
-    def analyze_cherry_pick_conflicts(self, target_branch: str, commit_sha: str) -> Dict[str, Any]:
-        """Analyze potential conflicts from cherry-picking a commit to target branch using GitPython."""
+    def analyze_cherry_pick_conflicts(
+        self, target_branch: str, commit_sha: str, base_sha: str = None, verbose: bool = False
+    ) -> Dict[str, Any]:
+        """
+        Analyze potential conflicts from cherry-picking a commit to target branch using git merge-tree.
+
+        Cherry-pick applies the diff from commit_parent→commit onto the target branch.
+        To simulate this accurately, we use git merge-tree with the commit's parent as merge-base:
+
+        git merge-tree --write-tree --merge-base=<commit_parent> <target_branch> <commit>
+
+        This approach:
+        1. Gets the commit's parent to understand what changes the commit introduces
+        2. Uses merge-tree to simulate applying those specific changes to target branch
+        3. Only shows conflicts in files the commit actually modifies (realistic)
+        4. Avoids false conflicts from unrelated repository evolution
+
+        Args:
+            target_branch: Branch to cherry-pick into (e.g., "6.0")
+            commit_sha: Commit to cherry-pick (e.g., "54af1cb2")
+            base_sha: Unused - we calculate the commit's parent automatically
+            verbose: Show detailed merge-tree output and commands
+        """
         try:
+            # Check if target branch exists first
+            if not self.check_branch_exists(target_branch):
+                raise GitError(f"Branch '{target_branch}' does not exist in this repository")
+
+            # Check if commit SHA exists
+            if not self.verify_pr_sha_exists(commit_sha):
+                raise GitError(f"Commit '{commit_sha}' does not exist in this repository")
+
+            # Get the commit's parent to use as merge-base for accurate cherry-pick simulation
+            commit_parent = self.run_command(["rev-parse", f"{commit_sha}^"])
+
+            if verbose and hasattr(self, "console") and self.console:
+                self.console.print(f"[dim]Commit parent (merge-base): {commit_parent}[/dim]")
+
+            # Show the exact command if verbose
+            if verbose and hasattr(self, "console") and self.console:
+                merge_tree_cmd = f"git merge-tree --write-tree --name-only --messages --merge-base={commit_parent} {target_branch} {commit_sha}"
+                self.console.print(f"[dim cyan]Running: {merge_tree_cmd}[/dim cyan]")
+
+            merge_tree_output = self.run_command_binary_safe(
+                [
+                    "merge-tree",
+                    "--write-tree",
+                    "--name-only",
+                    "--messages",
+                    f"--merge-base={commit_parent}",
+                    target_branch,
+                    commit_sha,
+                ],
+                allow_failure=True,
+            )
+
+            # Show raw merge-tree output if verbose
+            if verbose and hasattr(self, "console") and self.console:
+                self.console.print(
+                    f"[dim yellow]Raw merge-tree output for {commit_sha}:[/dim yellow]"
+                )
+                if merge_tree_output.strip():
+                    # Show first 50 lines to avoid overwhelming output
+                    lines = merge_tree_output.split("\n")[:50]
+                    for i, line in enumerate(lines):
+                        self.console.print(f"[dim]{i+1:3}: {line}[/dim]")
+                    if len(merge_tree_output.split("\n")) > 50:
+                        remaining = len(merge_tree_output.split("\n")) - 50
+                        self.console.print(f"[dim]... and {remaining} more lines[/dim]")
+                else:
+                    self.console.print("[dim green]No merge-tree output (clean merge)[/dim green]")
+                self.console.print()
+
+            # Parse modern merge-tree --write-tree output for conflict information
+            if verbose and hasattr(self, "console") and self.console:
+                self.console.print(
+                    f"[dim]merge_tree_output length: {len(merge_tree_output)} chars[/dim]"
+                )
+                self.console.print(
+                    f"[dim]Number of output lines: {len(merge_tree_output.split(chr(10))) if merge_tree_output else 0}[/dim]"
+                )
+
+            conflict_info = self._parse_modern_merge_tree_output(merge_tree_output)
+
+            if verbose and hasattr(self, "console") and self.console:
+                self.console.print(
+                    f"[dim]Parsed conflicts: {len(conflict_info.get('conflicts', []))}[/dim]"
+                )
+                self.console.print(
+                    f"[dim]Has conflicts: {conflict_info.get('has_conflicts', False)}[/dim]"
+                )
+
             from git import Repo
 
-            # Use GitPython for structured access
+            # Use GitPython for structured access to get commit info
             repo = Repo(self.repo_path)
 
             # Get commit objects
-            target_commit = repo.commit(target_branch)
             cherry_commit = repo.commit(commit_sha)
+
+            # Get commit size (files and lines changed)
+            files_changed = 0
+            lines_changed = 0
+            if len(cherry_commit.parents) > 0:
+                parent_commit = cherry_commit.parents[0]
+                commit_diff = parent_commit.diff(cherry_commit)
+                files_changed = len(commit_diff)
+
+                # Count lines changed with better binary file handling
+                for diff_item in commit_diff:
+                    try:
+                        lines_changed += self._count_diff_lines_safely(diff_item)
+                    except Exception:
+                        # Skip problematic diff items
+                        lines_changed += 15  # Estimate
 
             # Get commit details
             commit_info = {
@@ -349,64 +495,12 @@ class GitInterface:
                 "commit_author": str(cherry_commit.author),
                 "commit_date": cherry_commit.committed_datetime.isoformat(),
                 "target_branch": target_branch,
+                "files_changed": files_changed,
+                "lines_changed": lines_changed,
             }
 
-            # Use diff to analyze what files will be affected
-            # Compare the commit against its parent to see what changed
-            if len(cherry_commit.parents) > 0:
-                parent_commit = cherry_commit.parents[0]
-
-                # Get the changes this commit makes
-                commit_diff = parent_commit.diff(cherry_commit)
-
-                # Now check each changed file against the target branch
-                conflicts = []
-
-                for diff_item in commit_diff:
-                    file_path = diff_item.a_path or diff_item.b_path
-                    if not file_path:
-                        continue
-
-                    # Check if this file exists and is different in target branch
-                    try:
-                        # Get the file content at parent, commit, and target
-                        conflict_info = self._analyze_file_conflict(
-                            repo, parent_commit, cherry_commit, target_commit, file_path
-                        )
-
-                        if conflict_info:
-                            # Add blame information for the conflicted file
-                            blame_info = self._get_file_blame_info(repo, target_commit, file_path)
-                            if blame_info:
-                                conflict_info["blame_commits"] = blame_info
-                            conflicts.append(conflict_info)
-
-                    except Exception as e:
-                        # File might not exist in target or parent - potential conflict
-                        conflicts.append(
-                            {
-                                "file": file_path,
-                                "type": "file_change_conflict",
-                                "conflicted_lines": 1,
-                                "conflict_regions": [
-                                    {"start_line": 1, "line_count": 1, "end_line": 1}
-                                ],
-                                "region_count": 1,
-                                "description": f"File modification conflict: {str(e)[:50]}",
-                            }
-                        )
-            else:
-                # Root commit - shouldn't happen in practice
-                conflicts = [
-                    {
-                        "file": "unknown",
-                        "type": "root_commit",
-                        "conflicted_lines": 1,
-                        "conflict_regions": [{"start_line": 1, "line_count": 1, "end_line": 1}],
-                        "region_count": 1,
-                        "description": "Root commit analysis not supported",
-                    }
-                ]
+            # Use the conflicts from merge-tree analysis (real conflicts)
+            conflicts = conflict_info.get("conflicts", [])
 
             result = commit_info.copy()
             result.update(
@@ -420,7 +514,38 @@ class GitInterface:
 
             return result
 
+        except GitError as e:
+            # Repository context error - provide helpful message
+            error_msg = str(e)
+            if "does not exist in this repository" in error_msg:
+                if hasattr(self, "console") and self.console:
+                    self.console.print(
+                        "[yellow]⚠️  Conflict analysis requires running in the target repository[/yellow]"
+                    )
+                    if verbose:
+                        self.console.print(
+                            f"[dim red]Git error for {commit_sha}: {error_msg}[/dim red]"
+                        )
+                        self.console.print(f"[dim]Current repo: {self.repo_path}[/dim]")
+
+            return {
+                "commit_sha": commit_sha[:8],
+                "target_branch": target_branch,
+                "error": error_msg,
+                "has_conflicts": None,
+                "conflict_count": 0,
+                "conflicts": [],
+                "complexity": "repo_error",
+                "files_changed": 0,
+                "lines_changed": 0,
+            }
         except Exception as e:
+            # Other unexpected errors
+            if hasattr(self, "console") and self.console:
+                self.console.print(
+                    f"[dim red]Debug: Conflict analysis failed for {commit_sha}: {str(e)}[/dim red]"
+                )
+
             return {
                 "commit_sha": commit_sha[:8],
                 "target_branch": target_branch,
@@ -429,6 +554,8 @@ class GitInterface:
                 "conflict_count": 0,
                 "conflicts": [],
                 "complexity": "error",
+                "files_changed": 0,
+                "lines_changed": 0,
             }
 
     def _analyze_file_conflict(self, repo, parent_commit, cherry_commit, target_commit, file_path):
@@ -593,6 +720,43 @@ class GitInterface:
         except GitError as e:
             return f"Error getting diff: {e}"
 
+    def _count_diff_lines_safely(self, diff_item) -> int:
+        """Safely count lines changed in a diff item, handling binary files."""
+        try:
+            if diff_item.a_blob and diff_item.b_blob:
+                # Modified file - count difference
+                a_data = diff_item.a_blob.data_stream.read()
+                b_data = diff_item.b_blob.data_stream.read()
+
+                # Check for binary content
+                if b"\x00" in a_data[:1024] or b"\x00" in b_data[:1024]:
+                    return 50  # Binary file estimate
+
+                try:
+                    a_text = a_data.decode("utf-8")
+                    b_text = b_data.decode("utf-8")
+                    return abs(b_text.count("\n") - a_text.count("\n"))
+                except UnicodeDecodeError:
+                    return 25  # Binary file fallback
+
+            elif diff_item.new_file or diff_item.deleted_file:
+                # New or deleted file
+                blob = diff_item.b_blob or diff_item.a_blob
+                if blob:
+                    data = blob.data_stream.read()
+                    if b"\x00" in data[:1024]:
+                        return 40  # Binary file
+                    try:
+                        text = data.decode("utf-8")
+                        return text.count("\n")
+                    except UnicodeDecodeError:
+                        return 30  # Binary file
+
+            return 5  # Unknown case
+
+        except Exception:
+            return 10  # Safe fallback
+
     def _assess_conflict_complexity(self, conflicts: List[Dict[str, Any]]) -> str:
         """Assess the complexity of conflicts."""
         if not conflicts:
@@ -611,10 +775,10 @@ class GitInterface:
 
     # Cherry-pick Operations
     def execute_cherry_pick(self, commit_sha: str) -> Dict[str, Any]:
-        """Execute git cherry-pick and return result status."""
+        """Execute git cherry-pick with -x flag and return result status."""
         try:
-            # Attempt cherry-pick
-            result = self.run_command(["cherry-pick", commit_sha])
+            # Attempt cherry-pick with -x to record original commit
+            result = self.run_command(["cherry-pick", "-x", commit_sha])
 
             return {
                 "success": True,
@@ -721,6 +885,13 @@ class GitInterface:
         except GitError:
             return ""
 
+    def get_branch_head(self, branch: str) -> str:
+        """Get the current HEAD SHA of a specific branch."""
+        try:
+            return self.run_command(["rev-parse", branch])
+        except GitError as e:
+            raise GitError(f"Failed to get HEAD for branch {branch}: {e}") from e
+
     def verify_pr_sha_exists(self, sha: str) -> bool:
         """Verify that a specific SHA exists in the git repository."""
         try:
@@ -765,3 +936,122 @@ class GitInterface:
 
         except GitError:
             return None
+
+    def _parse_modern_merge_tree_output(self, merge_tree_output: str) -> Dict[str, Any]:
+        """Parse modern git merge-tree --write-tree output to extract conflict information."""
+        if not merge_tree_output.strip():
+            return {"conflicts": [], "has_conflicts": False}
+
+        lines = merge_tree_output.strip().split("\n")
+        if not lines:
+            return {"conflicts": [], "has_conflicts": False}
+
+        # First line is the tree OID (or tree OID + status info)
+        # tree_line = lines[0]  # Unused variable
+
+        # Check if there are conflicts by looking at the output structure
+        # Clean merge: just one line with tree OID
+        # Conflicted merge: tree OID + conflicted files + messages
+
+        conflicts = []
+        conflicted_files = []
+        informational_messages = []
+
+        # Parse the sections
+        current_section = "tree"
+        for i, line in enumerate(lines):
+            if i == 0:
+                continue  # Skip tree OID line
+
+            if not line.strip():
+                # Empty line separates sections
+                current_section = "messages"
+                continue
+
+            if current_section == "tree" or current_section == "files":
+                # This section contains conflicted file names (due to --name-only)
+                if line.strip():
+                    conflicted_files.append(line.strip())
+                    current_section = "files"
+            elif current_section == "messages":
+                # Informational messages about conflicts
+                informational_messages.append(line)
+
+        # Build conflict structures from conflicted files
+        for file_path in conflicted_files:
+            conflicts.append(
+                {
+                    "file": file_path,
+                    "type": "merge_conflict",
+                    "conflicted_lines": 1,  # We don't have line counts with --name-only
+                    "region_count": 1,
+                    "conflict_regions": [{"start_line": 1, "line_count": 1, "end_line": 1}],
+                    "description": f"Conflict in {file_path}",
+                    # Note: We'd need additional git blame calls to get recent commits
+                    "blame_commits": [],
+                }
+            )
+
+        return {
+            "conflicts": conflicts,
+            "has_conflicts": len(conflicts) > 0,
+            "informational_messages": informational_messages,
+        }
+
+    def _parse_merge_tree_output(self, merge_tree_output: str) -> Dict[str, Any]:
+        """Parse git merge-tree output to extract conflict information."""
+        if not merge_tree_output.strip():
+            # No conflicts detected
+            return {"conflicts": [], "has_conflicts": False}
+
+        conflicts = []
+        conflict_files = {}
+
+        # Split output into lines and process
+        lines = merge_tree_output.split("\n")
+        current_file = None
+        conflict_lines = 0
+
+        for line in lines:
+            # Look for conflict markers and file headers
+            if (
+                line.startswith("<<<<<<<")
+                or line.startswith("=======")
+                or line.startswith(">>>>>>>")
+            ):
+                conflict_lines += 1
+            elif line.startswith("@@"):
+                # Hunk header - indicates a conflict region
+                if current_file:
+                    if current_file not in conflict_files:
+                        conflict_files[current_file] = {"lines": 0, "regions": 0}
+                    conflict_files[current_file]["regions"] += 1
+            elif line.startswith("+++") or line.startswith("---"):
+                # File header
+                if line.startswith("+++"):
+                    # Extract filename from +++ b/filename
+                    parts = line.split("\t")[0].split(" ")
+                    if len(parts) > 1 and parts[1].startswith("b/"):
+                        current_file = parts[1][2:]  # Remove 'b/' prefix
+            elif current_file and (line.startswith("+") or line.startswith("-")):
+                # Count actual conflict lines
+                if current_file not in conflict_files:
+                    conflict_files[current_file] = {"lines": 0, "regions": 0}
+                conflict_files[current_file]["lines"] += 1
+
+        # Convert to conflict structure
+        for file_path, info in conflict_files.items():
+            conflicts.append(
+                {
+                    "file": file_path,
+                    "type": "merge_conflict",
+                    "conflicted_lines": info["lines"],
+                    "region_count": max(1, info["regions"]),
+                    "conflict_regions": [
+                        {"start_line": 1, "line_count": info["lines"], "end_line": info["lines"]}
+                    ],
+                    "description": f"Merge conflict in {file_path}",
+                }
+            )
+
+        return {"conflicts": conflicts, "has_conflicts": len(conflicts) > 0}

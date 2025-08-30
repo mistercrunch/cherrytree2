@@ -170,28 +170,139 @@ def display_minors_overview(format_type: str = "table") -> None:
     console.print()  # Add spacing before help
 
 
-def create_pr_table(prs_data: list, title: str) -> Table:
-    """Create a reusable PR table with consistent formatting."""
+def create_pr_table(prs_data: list, title: str, include_conflicts: bool = False) -> Table:
+    """Create a reusable PR table with consistent formatting.
+
+    Args:
+        prs_data: List of PR data (either PR dicts or conflict analysis dicts)
+        title: Table title
+        include_conflicts: If True, adds Size/Conflicts/Complexity columns for analysis
+    """
     pr_table = Table(title=title, expand=True)
+
+    # Core PR columns (consistent between status and analyze)
     pr_table.add_column("SHA", style="green", width=10)
-    pr_table.add_column("Merged", style="dim", width=10)
+    pr_table.add_column("Merged", style="dim", width=12, justify="center")
     pr_table.add_column("PR", style="cyan", width=8)
-    pr_table.add_column("Title", style="white")
+    pr_table.add_column("Title", style="white", overflow="ellipsis", min_width=30)
     pr_table.add_column("Author", style="dim", width=15)
-    pr_table.add_column("Status", style="yellow", width=8)
+    pr_table.add_column(
+        "DB", style="red", width=3, justify="center"
+    )  # Database migration indicator
+
+    # Add conflict analysis columns if requested
+    if include_conflicts:
+        pr_table.add_column("Size", style="dim", width=8, justify="center")
+        pr_table.add_column("Conflicts", style="bold", width=10, justify="center")
+        pr_table.add_column("Complexity", style="", width=10)
+    else:
+        pr_table.add_column("Status", style="yellow", width=8)
 
     for pr_data in prs_data:
-        from .pull_request import PullRequest
-
-        pr = PullRequest.from_dict(pr_data)
-
-        pr_table.add_row(
-            pr.format_clickable_commit() if pr.master_sha else "",  # Clickable commit link
-            pr.display_merge_date(),  # Merge date from commit data
-            pr.format_clickable_pr(),  # Clickable PR link
-            pr.short_title(),  # Truncated title with ellipsis
-            pr.display_author(),
-            pr.status_text,
-        )
+        if include_conflicts:
+            # Handle conflict analysis data
+            _add_conflict_analysis_row(pr_table, pr_data)
+        else:
+            # Handle basic PR data
+            _add_basic_pr_row(pr_table, pr_data)
 
     return pr_table
+
+
+def _add_basic_pr_row(pr_table: Table, pr_data: dict) -> None:
+    """Add a basic PR row for status display."""
+    from .pull_request import PullRequest
+
+    pr = PullRequest.from_dict(pr_data)
+
+    # Database migration indicator
+    db_indicator = "🗄️" if pr.has_database_migration else ""
+
+    pr_table.add_row(
+        pr.format_clickable_commit() if pr.master_sha else "",
+        pr.display_merge_date(),
+        pr.format_clickable_pr(),
+        pr.short_title(),
+        pr.display_author(),
+        db_indicator,
+        pr.status_text,
+    )
+
+
+def _add_conflict_analysis_row(pr_table: Table, analysis: dict) -> None:
+    """Add a conflict analysis row with merge intelligence."""
+    pr_number = analysis.get("pr_number")
+    pr_title = analysis.get("pr_title", "")
+    commit_sha = analysis.get("commit_sha", "")
+    merge_date = analysis.get("merge_date", "")
+
+    # Get commit size info (actual files and lines changed in the commit)
+    files_changed = analysis.get("files_changed", 0)
+    lines_changed = analysis.get("lines_changed", 0)
+
+    # Get conflict info (files and lines that would conflict during cherry-pick)
+    conflict_count = analysis.get("conflict_count", 0)
+    complexity = analysis.get("complexity", "error")
+
+    # Format columns consistently with status table
+    pr_link = (
+        f"[link=https://github.com/apache/superset/pull/{pr_number}]#{pr_number}[/link]"
+        if pr_number
+        else ""
+    )
+    sha_link = (
+        f"[link=https://github.com/apache/superset/commit/{commit_sha}]{commit_sha}[/link]"
+        if commit_sha
+        else ""
+    )
+
+    # Format merge date (extract just the date part)
+    merge_date_display = ""
+    if merge_date:
+        try:
+            # Handle format like "2025-08-18 14:04:26 -0700" -> "2025-08-18"
+            merge_date_display = merge_date.split()[0] if " " in merge_date else merge_date[:10]
+        except Exception:
+            merge_date_display = str(merge_date)[:10]
+
+    # Format size column (original commit size)
+    size_display = (
+        f"{files_changed}f/{lines_changed}l" if files_changed > 0 or lines_changed > 0 else "0f/0l"
+    )
+
+    # Format conflicts column (cherry-pick conflicts)
+    conflicts_display = f"{conflict_count} files" if conflict_count > 0 else "clean"
+
+    # Format complexity with color
+    complexity_display = complexity
+    if complexity == "clean":
+        complexity_display = "[green]clean[/green]"
+    elif complexity == "simple":
+        complexity_display = "[yellow]simple[/yellow]"
+    elif complexity == "moderate":
+        complexity_display = "[orange1]moderate[/orange1]"
+    elif complexity == "complex":
+        complexity_display = "[red]complex[/red]"
+    elif complexity == "repo_error":
+        complexity_display = "[dim]wrong repo[/dim]"
+    elif complexity == "error":
+        complexity_display = "[red]error[/red]"
+
+    # Get author from analysis or try to extract from title/data
+    author = analysis.get("author", analysis.get("pr_author", ""))
+
+    # Database migration indicator (from analysis data)
+    has_db_migration = analysis.get("has_database_migration", False)
+    db_indicator = "🗄️" if has_db_migration else ""
+
+    pr_table.add_row(
+        sha_link,
+        merge_date_display,
+        pr_link,
+        pr_title,
+        author,
+        db_indicator,
+        size_display,
+        conflicts_display,
+        complexity_display,
+    )

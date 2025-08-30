@@ -1,16 +1,102 @@
 """Conflict analysis for cherry-pick operations."""
 
 import json
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from rich.console import Console
+from rich.progress import Progress
 from rich.table import Table
 
 from .git_interface import GitInterface
 from .minor import Minor
 
 
-def analyze_next_pr_conflicts(minor_version: str, format_type: str = "table") -> None:
+def analyze_all_pr_conflicts(
+    minor_version: str,
+    format_type: str = "table",
+    complexity_filter: Optional[str] = None,
+    limit: int = 50,
+    verbose: bool = False,
+) -> None:
+    """Bulk conflict analysis showing predictions for all PRs in a sortable table."""
+    console = Console()
+
+    try:
+        # Load minor release data
+        minor = Minor.from_yaml(minor_version)
+        if not minor:
+            console.print(
+                f"[red]No sync data found for {minor_version}. Run `ct sync {minor_version}` first.[/red]"
+            )
+            return
+
+        # Get all merged PRs for analysis
+        all_prs = [pr for pr in minor.get_prs() if pr.is_ready_for_cherry_pick()]
+        if not all_prs:
+            console.print(
+                f"[yellow]No merged PRs available for analysis in {minor_version}[/yellow]"
+            )
+            return
+
+        # Limit the number of PRs to analyze
+        prs_to_analyze = all_prs[:limit]
+        if len(all_prs) > limit:
+            console.print(
+                f"[dim]Analyzing first {limit} of {len(all_prs)} PRs (use --limit to change)[/dim]"
+            )
+
+        # Initialize git interface
+        git = GitInterface(console=console)
+
+        # Analyze all PRs with progress tracking
+        console.print(f"[cyan]Analyzing {len(prs_to_analyze)} PRs for conflicts...[/cyan]")
+
+        analyses = []
+        with Progress(console=console) as progress:
+            task = progress.add_task("Analyzing PRs...", total=len(prs_to_analyze))
+
+            for pr in prs_to_analyze:
+                if not pr.master_sha:
+                    continue
+
+                # The git interface will automatically use base_sha from the YAML file
+                analysis = git.analyze_cherry_pick_conflicts(
+                    minor_version, pr.master_sha, verbose=verbose
+                )
+                analysis["pr_number"] = pr.pr_number
+                analysis["pr_title"] = pr.title
+                analysis["pr_author"] = pr.author
+                analysis["merge_date"] = pr.merge_date
+                analysis["has_database_migration"] = pr.has_database_migration
+                analyses.append(analysis)
+
+                progress.advance(task)
+
+        # Filter by complexity if requested
+        if complexity_filter:
+            filter_list = [c.strip().lower() for c in complexity_filter.split(",")]
+            analyses = [a for a in analyses if a.get("complexity", "").lower() in filter_list]
+            console.print(
+                f"[dim]Filtered to {len(analyses)} PRs matching complexity: {complexity_filter}[/dim]"
+            )
+
+        # Display results
+        if format_type == "json":
+            from .bulk_analysis import _display_bulk_json_output
+
+            _display_bulk_json_output(analyses, minor_version)
+        else:
+            from .bulk_analysis import _display_bulk_table_output
+
+            _display_bulk_table_output(analyses, minor_version, console)
+
+    except Exception as e:
+        console.print(f"[red]Error analyzing conflicts: {e}[/red]")
+
+
+def analyze_next_pr_conflicts(
+    minor_version: str, format_type: str = "table", verbose: bool = False
+) -> None:
     """Analyze potential conflicts for the next PR to cherry-pick."""
     console = Console()
 
@@ -42,9 +128,11 @@ def analyze_next_pr_conflicts(minor_version: str, format_type: str = "table") ->
 
         # Analyze conflicts
         console.print(
-            f"[blue]Analyzing conflicts for cherry-pick of PR #{next_pr.pr_number}...[/blue]"
+            f"[cyan]Analyzing conflicts for cherry-pick of PR #{next_pr.pr_number}...[/cyan]"
         )
-        analysis = git.analyze_cherry_pick_conflicts(minor_version, next_pr.master_sha)
+        analysis = git.analyze_cherry_pick_conflicts(
+            minor_version, next_pr.master_sha, verbose=verbose
+        )
 
         # Display results
         if format_type == "json":
@@ -240,7 +328,8 @@ def run_cherry_pick_chain(
                 continue
 
             # Analyze conflicts
-            console.print("[blue]🔍 Analyzing conflicts...[/blue]")
+            console.print("[cyan]🔍 Analyzing conflicts...[/cyan]")
+            # Note: chain function doesn't support verbose mode yet
             analysis = git.analyze_cherry_pick_conflicts(minor_version, next_pr.master_sha)
 
             if analysis.get("error"):
@@ -279,7 +368,7 @@ def run_cherry_pick_chain(
                 return
 
             # Execute cherry-pick
-            console.print(f"[blue]🍒 Executing: git cherry-pick {analysis['commit_sha']}[/blue]")
+            console.print(f"[cyan]🍒 Executing: git cherry-pick -x {analysis['commit_sha']}[/cyan]")
             result = git.execute_cherry_pick(next_pr.master_sha)
 
             if result["success"]:
@@ -323,7 +412,7 @@ def run_cherry_pick_chain(
         console.print("[bold cyan]🏁 Cherry-pick chain completed[/bold cyan]")
         console.print(f"[green]✅ Successful: {picks_successful}[/green]")
         console.print(f"[yellow]⏭️  Skipped: {picks_skipped}[/yellow]")
-        console.print(f"[blue]📊 Total attempted: {picks_attempted}[/blue]")
+        console.print(f"[cyan]📊 Total attempted: {picks_attempted}[/cyan]")
 
         if picks_successful > 0:
             console.print(f"[dim]Consider running: ct minor sync {minor_version}[/dim]")
@@ -393,10 +482,10 @@ def _prompt_action_menu(analysis: Dict[str, Any], next_pr: Any, auto_clean: bool
     console.print("[bold yellow]What would you like to do?[/bold yellow]")
 
     # Generate git command that would be executed
-    git_cmd = f"git cherry-pick {analysis['commit_sha']}"
+    git_cmd = f"git cherry-pick -x {analysis['commit_sha']}"
 
     console.print(f"[dim]1.[/dim] [green]Proceed[/green] - Execute: {git_cmd}")
-    console.print("[dim]2.[/dim] [blue]Show diff[/blue] - View raw changes before deciding")
+    console.print("[dim]2.[/dim] [cyan]Show diff[/cyan] - View raw changes before deciding")
     console.print("[dim]3.[/dim] [yellow]Skip[/yellow] - Skip this PR and continue to next")
     console.print("[dim]4.[/dim] [red]Abort[/red] - Stop the cherry-pick chain")
 
@@ -420,7 +509,7 @@ def _prompt_action_menu(analysis: Dict[str, Any], next_pr: Any, auto_clean: bool
 def _show_raw_diff(git: Any, commit_sha: str, console: Console) -> None:
     """Display the raw diff for the commit."""
     console.print()
-    console.print(f"[bold blue]📄 Raw diff for {commit_sha}:[/bold blue]")
+    console.print(f"[bold cyan]📄 Raw diff for {commit_sha}:[/bold cyan]")
     console.print()
 
     diff_output = git.get_cherry_pick_diff(commit_sha)
@@ -558,7 +647,7 @@ def _display_recommendations(analysis: Dict[str, Any], console: Console) -> None
 
     if not analysis["has_conflicts"]:
         console.print("[green]🎯 Recommendation: Safe to cherry-pick[/green]")
-        console.print(f"[dim]Run: git cherry-pick {analysis['commit_sha']}[/dim]")
+        console.print(f"[dim]Run: git cherry-pick -x {analysis['commit_sha']}[/dim]")
         return
 
     complexity = analysis["complexity"]
@@ -566,7 +655,7 @@ def _display_recommendations(analysis: Dict[str, Any], console: Console) -> None
     if complexity == "simple":
         console.print("[yellow]⚠️  Recommendation: Manual resolution recommended[/yellow]")
         console.print("[dim]Conflicts are limited and should be straightforward to resolve[/dim]")
-        console.print(f"[dim]Run: git cherry-pick {analysis['commit_sha']}[/dim]")
+        console.print(f"[dim]Run: git cherry-pick -x {analysis['commit_sha']}[/dim]")
         console.print("[dim]Then resolve conflicts manually and commit[/dim]")
 
     elif complexity == "moderate":
@@ -576,7 +665,7 @@ def _display_recommendations(analysis: Dict[str, Any], console: Console) -> None
             "[dim]Consider checking if related commits should be cherry-picked first[/dim]"
         )
         console.print(
-            f"[dim]Or attempt manual resolution: git cherry-pick {analysis['commit_sha']}[/dim]"
+            f"[dim]Or attempt manual resolution: git cherry-pick -x {analysis['commit_sha']}[/dim]"
         )
 
     else:  # complex
@@ -587,7 +676,11 @@ def _display_recommendations(analysis: Dict[str, Any], console: Console) -> None
 
 
 def analyze_commit_conflicts(
-    minor_version: str, commit_sha: str, repo_path: str, format_type: str = "table"
+    minor_version: str,
+    commit_sha: str,
+    repo_path: str,
+    format_type: str = "table",
+    verbose: bool = False,
 ) -> None:
     """Analyze conflicts for a specific commit SHA."""
     console = Console()
@@ -597,8 +690,8 @@ def analyze_commit_conflicts(
         git = GitInterface(console=console)
 
         # Analyze conflicts
-        console.print(f"[blue]Analyzing conflicts for cherry-pick of {commit_sha}...[/blue]")
-        analysis = git.analyze_cherry_pick_conflicts(minor_version, commit_sha)
+        console.print(f"[cyan]Analyzing conflicts for cherry-pick of {commit_sha}...[/cyan]")
+        analysis = git.analyze_cherry_pick_conflicts(minor_version, commit_sha, verbose=verbose)
 
         # Display results
         if format_type == "json":

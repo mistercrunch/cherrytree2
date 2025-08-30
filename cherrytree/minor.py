@@ -27,6 +27,7 @@ class Minor:
         branch_name: Optional[str] = None,
         base_sha: str = "",
         base_date: str = "",
+        branch_head_sha: str = "",
         targeted_prs: Optional[List[Dict[str, Any]]] = None,
         commits_in_branch: Optional[List[Dict[str, Any]]] = None,
         micro_releases: Optional[List[Dict[str, Any]]] = None,
@@ -39,6 +40,7 @@ class Minor:
         self.branch_name = branch_name or minor_version
         self.base_sha = base_sha
         self.base_date = base_date
+        self.branch_head_sha = branch_head_sha
         self.targeted_prs = targeted_prs or []
         self.commits_in_branch = commits_in_branch or []
         self.micro_releases = micro_releases or []
@@ -76,6 +78,7 @@ class Minor:
             branch_name=data.get("branch_name", ""),
             base_sha=data.get("base_sha", ""),
             base_date=data.get("base_date", ""),
+            branch_head_sha=data.get("branch_head_sha", ""),
             targeted_prs=data.get("targeted_prs", []),
             commits_in_branch=data.get("commits_in_branch", []),
             micro_releases=data.get("micro_releases", []),
@@ -108,6 +111,7 @@ class Minor:
             "branch_name": self.branch_name,
             "base_sha": self.base_sha,
             "base_date": self.base_date,
+            "branch_head_sha": self.branch_head_sha,
             "targeted_prs": self.targeted_prs,
             "commits_in_branch": self.commits_in_branch,
             "micro_releases": self.micro_releases,
@@ -116,26 +120,19 @@ class Minor:
         }
 
     def get_prs(self) -> List[PullRequest]:
-        """Get all targeted PRs as PullRequest objects with enriched merge dates."""
-        # Build PR number to commit date mapping
-        pr_to_date = {}
-        for commit_data in self.commits_in_branch:
-            pr_number = commit_data.get("pr_number")
-            if pr_number:
-                pr_to_date[pr_number] = commit_data.get("date", "")
+        """Get all targeted PRs as PullRequest objects with enriched merge dates.
 
-        # Create enriched PullRequest objects
+        Since targeted_prs now only contains unpicked PRs, we don't enrich from
+        commits_in_branch. The PRs already have their master branch merge info.
+        """
+        # For unpicked PRs, merge_date should come from GitHub (when merged to master)
+        # The master_sha is the SHA to cherry-pick from
         enriched_prs = []
         for pr_data in self.targeted_prs:
-            # Add merge date from commits data
-            pr_number = pr_data.get("pr_number")
-            merge_date = pr_to_date.get(pr_number, "")
-
-            # Create enriched PR data
-            enriched_data = pr_data.copy()
-            enriched_data["merge_date"] = merge_date
-
-            enriched_prs.append(PullRequest.from_dict(enriched_data))
+            # For unpicked PRs, use the data as-is from GitHub
+            # master_sha = SHA from master branch (for cherry-picking)
+            # is_merged = whether it's been merged to master
+            enriched_prs.append(PullRequest.from_dict(pr_data))
 
         return enriched_prs
 
@@ -172,6 +169,29 @@ class Minor:
         """Get only commits that are associated with PRs."""
         return [commit for commit in self.get_commits() if commit.has_pr]
 
+    def get_picked_prs(self) -> List[PullRequest]:
+        """Get PRs that have been cherry-picked (for display/analysis).
+
+        These are reconstructed from commits data - not stored in targeted_prs
+        since targeted_prs is now the work queue of unpicked PRs.
+        """
+        picked_prs = []
+
+        for commit in self.get_commits_with_prs():
+            # Create a PR object from commit data
+            # Note: This is enriched data, not stored in YAML
+            pr_data = {
+                "pr_number": commit.pr_number,
+                "title": commit.message.split("\n")[0],  # First line of commit message
+                "master_sha": commit.sha,
+                "author": getattr(commit, "author", ""),  # If available
+                "is_merged": True,  # By definition, it's in branch commits
+                "merge_date": commit.date,  # Date from commit
+            }
+            picked_prs.append(PullRequest.from_dict(pr_data))
+
+        return picked_prs
+
     def get_commits_since_release(self) -> List[Commit]:
         """Get commits added since the last release as Commit objects."""
         if not self.micro_releases or not self.commits_in_branch:
@@ -198,67 +218,59 @@ class Minor:
         return [Commit.from_dict(data) for data in unreleased_commit_data]
 
     def get_pr_counts(self) -> Dict[str, int]:
-        """Count PRs that are released vs unreleased on the branch."""
-        # Get merged PRs only
-        merged_prs = [pr for pr in self.targeted_prs if pr.get("is_merged", False)]
+        """Count PRs that are released vs unreleased on the branch.
 
-        if not self.micro_releases or not self.commits_in_branch:
-            # No releases yet or no commit data - all merged PRs are unreleased
-            return {"released": 0, "unreleased": len(merged_prs), "total": len(merged_prs)}
+        Since targeted_prs now only contains unpicked PRs, we count from commits.
+        """
+        # Get all PRs that have been cherry-picked (from commits)
+        commits_with_prs = self.get_commits_with_prs()
 
-        # Find the most recent release tag SHA using Micro objects
+        if not commits_with_prs:
+            # No PR commits found
+            unpicked_count = len([pr for pr in self.targeted_prs if pr.get("is_merged", False)])
+            return {"released": 0, "unreleased": unpicked_count, "total": unpicked_count}
+
+        if not self.micro_releases:
+            # No releases yet - all picked PRs are unreleased
+            unpicked_count = len([pr for pr in self.targeted_prs if pr.get("is_merged", False)])
+            total_unreleased = len(commits_with_prs) + unpicked_count
+            return {"released": 0, "unreleased": total_unreleased, "total": total_unreleased}
+
+        # Find the most recent release tag SHA
         latest_micro = self.get_latest_micro(stable_only=False)
-        if not latest_micro:
-            return {"released": 0, "unreleased": len(merged_prs), "total": len(merged_prs)}
+        if not latest_micro or not latest_micro.tag_sha:
+            # No valid release found - all picked PRs are unreleased
+            unpicked_count = len([pr for pr in self.targeted_prs if pr.get("is_merged", False)])
+            total_unreleased = len(commits_with_prs) + unpicked_count
+            return {"released": 0, "unreleased": total_unreleased, "total": total_unreleased}
 
         latest_release_sha = latest_micro.tag_sha
-        if not latest_release_sha:
-            return {"released": 0, "unreleased": len(merged_prs), "total": len(merged_prs)}
-
-        # Use Commit objects for cleaner logic
-        commits = self.get_commits()
 
         # Find the position of the latest release in commits
         release_commit_index = None
-        for i, commit in enumerate(commits):
+        for i, commit in enumerate(commits_with_prs):
             if commit.sha.startswith(latest_release_sha):
                 release_commit_index = i
                 break
 
         if release_commit_index is None:
-            # Release SHA not found in branch commits - treat all as unreleased
-            return {"released": 0, "unreleased": len(merged_prs), "total": len(merged_prs)}
+            # Release SHA not found - all picked PRs are unreleased
+            unpicked_count = len([pr for pr in self.targeted_prs if pr.get("is_merged", False)])
+            total_unreleased = len(commits_with_prs) + unpicked_count
+            return {"released": 0, "unreleased": total_unreleased, "total": total_unreleased}
 
-        # PRs in commits after the release are unreleased
-        # PRs in commits at or before the release are released
-        unreleased_pr_numbers = set()
-        released_pr_numbers = set()
+        # Count PRs before release (unreleased) vs at/after release (released)
+        unreleased_picked = len(commits_with_prs[:release_commit_index])  # Newer commits
+        released_picked = len(commits_with_prs[release_commit_index:])  # Older commits
 
-        for i, commit in enumerate(commits):
-            if commit.has_pr:
-                if i < release_commit_index:  # Commits before release (newer commits)
-                    unreleased_pr_numbers.add(commit.pr_number)
-                else:  # Commits at or after release (older commits)
-                    released_pr_numbers.add(commit.pr_number)
-
-        # Count how many of our targeted merged PRs fall into each category
-        released_count = 0
-        unreleased_count = 0
-
-        for pr in merged_prs:
-            pr_number = pr.get("pr_number")
-            if pr_number in released_pr_numbers:
-                released_count += 1
-            elif pr_number in unreleased_pr_numbers:
-                unreleased_count += 1
-            else:
-                # PR not found in branch commits - likely not cherry-picked yet
-                unreleased_count += 1
+        # Add unpicked PRs to unreleased count
+        unpicked_count = len([pr for pr in self.targeted_prs if pr.get("is_merged", False)])
+        total_unreleased = unreleased_picked + unpicked_count
 
         return {
-            "released": released_count,
-            "unreleased": unreleased_count,
-            "total": released_count + unreleased_count,
+            "released": released_picked,
+            "unreleased": total_unreleased,
+            "total": released_picked + total_unreleased,
         }
 
     def get_releases(self, include_rcs: bool = True) -> List[str]:
@@ -279,6 +291,20 @@ class Minor:
     def has_sync_file(self) -> bool:
         """Check if this minor has a corresponding sync file."""
         return bool(self.base_sha)  # If loaded from YAML, base_sha will be populated
+
+    def is_head_in_sync(self, repo_path: Optional[Path] = None) -> bool:
+        """Check if YAML branch_head_sha matches current git branch HEAD."""
+        if not self.branch_head_sha:
+            return False  # No HEAD tracking in YAML
+
+        try:
+            from .git_interface import GitInterface
+
+            git = GitInterface(repo_path or Path.cwd())
+            current_head = git.get_branch_head(self.branch_name)[:8]
+            return current_head == self.branch_head_sha
+        except Exception:
+            return False  # Can't verify, assume out of sync
 
     def get_next_pr(
         self, skip_open: bool = False, as_object: bool = False
@@ -379,7 +405,7 @@ class Minor:
         """Build complete release branch state from git and GitHub."""
         from .git_interface import GitInterface
 
-        console.print(f"[blue]Analyzing release branch {minor_version}...[/blue]")
+        console.print(f"[cyan]Analyzing release branch {minor_version}...[/cyan]")
 
         # Create GitInterface for all git operations
         git = GitInterface(repo_path, console)
@@ -389,6 +415,11 @@ class Minor:
         console.print(f"[dim]Finding merge-base for {branch_name}...[/dim]")
         base_sha, base_date = git.get_merge_base(branch_name)
         console.print(f"[dim]Base SHA: {base_sha[:8]} ({base_date})[/dim]")
+
+        # Capture current HEAD of branch for sync validation
+        console.print(f"[dim]Recording current HEAD of {branch_name}...[/dim]")
+        branch_head_sha = git.get_branch_head(branch_name)[:8]
+        console.print(f"[dim]Branch HEAD: {branch_head_sha}[/dim]")
 
         console.print(f"[dim]Getting commits in {branch_name} branch...[/dim]")
         branch_commits = git.get_branch_commits(branch_name, base_sha)
@@ -408,57 +439,74 @@ class Minor:
         )
         console.print(f"[dim]Found {len(labeled_prs)} PRs labeled {label}[/dim]")
 
-        # Phase 4: Build PR-to-SHA mapping from git log
+        # Phase 4: Build PR-to-SHA mapping from git log (for master branch merge SHAs)
         console.print("[dim]Building PR-to-SHA mapping from git log...[/dim]")
         pr_numbers = [pr.pr_number for pr in labeled_prs]
-        pr_to_sha, pr_chronological_order = git.build_pr_sha_mapping(pr_numbers)
+        pr_to_sha, pr_chronological_order, pr_to_date = git.build_pr_sha_mapping(pr_numbers)
 
-        # Create lookup for faster access
-        pr_lookup = {pr.pr_number: pr for pr in labeled_prs}
+        # Build work queue: only PRs that haven't been cherry-picked to THIS branch yet
+        # Use the actual branch commits, not master commits
+        already_picked_pr_numbers = set()
+        for commit in branch_commits:
+            if commit.pr_number:
+                already_picked_pr_numbers.add(commit.pr_number)
 
-        # Build targeted PRs in chronological order from git log
+        console.print(
+            f"[dim]Found {len(already_picked_pr_numbers)} PRs already in {branch_name} branch[/dim]"
+        )
         targeted_prs_dict = []
 
-        # First, add PRs that are in git log (in chronological order)
+        # Build merged PRs in chronological order (master branch order)
+        merged_prs_dict = []
         for pr_number in pr_chronological_order:
-            pr = pr_lookup.get(pr_number)
-            if not pr:
-                continue  # Shouldn't happen, but be safe
-            # Get the actual merge commit SHA from git log parsing
-            git_sha = pr_to_sha.get(pr.pr_number, "")
+            if pr_number not in already_picked_pr_numbers:
+                # Find the PR object for this number
+                pr = next((p for p in labeled_prs if p.pr_number == pr_number), None)
+                if pr and pr.is_merged:
+                    master_sha = pr_to_sha.get(pr.pr_number, "")
+                    merge_date = pr_to_date.get(pr.pr_number, "")
+                    merged_prs_dict.append(
+                        {
+                            "pr_number": pr.pr_number,
+                            "title": pr.title,
+                            "master_sha": master_sha,
+                            "author": pr.author,
+                            "is_merged": True,
+                            "merge_date": merge_date,
+                        }
+                    )
 
-            # These PRs are in git log, so they're merged
-            targeted_prs_dict.append(
-                {
-                    "pr_number": pr.pr_number,
-                    "title": pr.title,
-                    "master_sha": git_sha,
-                    "author": pr.author,
-                    "is_merged": True,  # All PRs in git log are merged
-                }
-            )
-
-        # Then, add any open PRs (not in git log yet) at the end
+        # Add open PRs at the end (they need merge first anyway)
+        open_prs_dict = []
         for pr in labeled_prs:
-            if not pr.is_merged and pr.pr_number not in pr_to_sha:
-                targeted_prs_dict.append(
+            if pr.pr_number not in already_picked_pr_numbers and pr.is_open:
+                open_prs_dict.append(
                     {
                         "pr_number": pr.pr_number,
                         "title": pr.title,
                         "master_sha": "",  # No SHA yet, not merged
                         "author": pr.author,
-                        "is_merged": False,  # Open PRs need merge first
+                        "is_merged": False,
+                        "merge_date": "",  # No merge date yet
                     }
                 )
 
-        # Count abandoned PRs (closed but not in git log)
+        # Combine: merged PRs in chronological order, then open PRs
+        targeted_prs_dict = merged_prs_dict + open_prs_dict
+
+        # Count how many PRs we filtered out
+        already_picked_count = len(already_picked_pr_numbers)
         abandoned_count = 0
         for pr in labeled_prs:
-            if pr.is_merged and pr.pr_number not in pr_to_sha:
+            if (
+                pr.is_merged
+                and pr.pr_number not in pr_to_sha
+                and pr.pr_number not in already_picked_pr_numbers
+            ):
                 abandoned_count += 1
 
         console.print(
-            f"[dim]Filtered to {len(targeted_prs_dict)} actionable PRs ({abandoned_count} abandoned)[/dim]"
+            f"[dim]Work queue: {len(targeted_prs_dict)} PRs need action ({already_picked_count} already picked, {abandoned_count} abandoned)[/dim]"
         )
 
         # Convert branch commits to dict format
@@ -491,6 +539,7 @@ class Minor:
             branch_name=branch_name,
             base_sha=base_sha,
             base_date=base_date,
+            branch_head_sha=branch_head_sha,
             targeted_prs=targeted_prs_dict,
             commits_in_branch=commits_dict,
             micro_releases=micro_releases_dict,

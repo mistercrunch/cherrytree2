@@ -65,12 +65,20 @@ def sync_command(
 
         # Save to file using Minor's to_yaml method
         output_path = state.to_yaml(output_dir)
+        absolute_path = output_path.resolve()
 
-        console.print(f"[green]✅ Synced {minor_version} release branch[/green]")
-        console.print(f"[dim]Written to: {output_path}[/dim]")
-        console.print(f"[dim]Base SHA: {state.base_sha}[/dim]")
-        console.print(f"[dim]Targeted PRs: {len(state.targeted_prs)} (open or merged)[/dim]")
-        console.print(f"[dim]Branch commits: {len(state.commits_in_branch)}[/dim]")
+        console.print()
+        console.print(f"[green]✅ Successfully synced {minor_version} release branch[/green]")
+        console.print(f"[cyan]📄 YAML file saved to: {absolute_path}[/cyan]")
+        console.print()
+        console.print("[bold]Summary:[/bold]")
+        console.print(f"├── Base SHA: {state.base_sha}")
+        console.print(f"├── Branch HEAD: {state.branch_head_sha}")
+        console.print(f"├── Work queue: {len(state.targeted_prs)} PRs need action")
+        console.print(f"├── Branch commits: {len(state.commits_in_branch)} total")
+        console.print(f"└── Micro releases: {len(state.micro_releases)} tags")
+        console.print()
+        console.print(f"[dim]Next: Run 'ct status {minor_version}' to see actionable PRs[/dim]")
 
     except Exception as e:
         console.print(f"[red]Error: {e}[/red]")

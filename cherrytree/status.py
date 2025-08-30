@@ -4,7 +4,6 @@ import json
 from typing import List, Optional
 
 import typer
-from packaging import version
 from rich.console import Console
 from rich.table import Table
 
@@ -27,42 +26,22 @@ def get_release_branches() -> List[str]:
         return []
 
 
-def get_latest_minor_in_major(current_minor: str) -> Optional[str]:
-    """Find the latest minor version in the same major as current_minor."""
-    # Extract major version (e.g., "4.1" -> "4")
-    major = current_minor.split(".")[0]
-
-    # Get all release branches
-    all_branches = get_release_branches()
-
-    # Filter to same major version
-    same_major_branches = [b for b in all_branches if b.startswith(f"{major}.")]
-
-    if not same_major_branches:
-        return None
-
-    # Find the latest using semantic version comparison
-    latest = max(same_major_branches, key=version.parse)
-
-    # Only return if there's a newer minor than current
-    if version.parse(latest) > version.parse(current_minor):
-        return latest
-
-    return None
-
-
 # Removed load_release_state - now handled by Minor.from_yaml()
 
 
-def display_minor_status(minor_version: str, format_type: str = "table") -> None:
+def display_minor_status(
+    minor_version: str, format_type: str = "table", limit: Optional[int] = None
+) -> None:
     """Display status of minor release branch."""
-    # Load minor release
-    minor = Minor.from_yaml(minor_version)
+    # Check sync status first
+    from .sync_validation import check_sync_and_offer_resync
 
-    if not minor:
-        console.print(f"[red]No sync data found for {minor_version}[/red]")
-        console.print(f"[yellow]Run: ct minor sync {minor_version}[/yellow]")
+    if not check_sync_and_offer_resync(minor_version, console):
         raise typer.Exit(1)
+
+    # Load minor release (we know it exists from sync check)
+    minor = Minor.from_yaml(minor_version)
+    assert minor is not None
 
     # Convert to dict for backward compatibility with existing display logic
     state = minor.to_dict()
@@ -85,9 +64,14 @@ def display_minor_status(minor_version: str, format_type: str = "table") -> None
     base_date = state.get("base_date", "unknown")
     last_synced = state.get("last_synced", "unknown")
 
-    # Release overview
+    # Release overview with cherry count
+    commits_count = len(state.get("commits_in_branch", []))
+    commits_with_prs = [c for c in state.get("commits_in_branch", []) if c.get("pr_number")]
+    cherry_count = len(commits_with_prs)
+
     console.print(f"[bold]Minor Release: {minor_version}[/bold]")
     console.print(f"├── Base SHA: {base_sha} ({base_date})")
+    console.print(f"├── Commits since merge-base: {commits_count} ({cherry_count} 🍒)")
     console.print(f"└── Last synced: {last_synced}")
     console.print("")
 
@@ -96,7 +80,7 @@ def display_minor_status(minor_version: str, format_type: str = "table") -> None
     if micro_releases:
         table = Table(title=f"Micro Releases for {minor_version}")
         table.add_column("Version", style="cyan")
-        table.add_column("Tag Date", style="bright_blue")
+        table.add_column("Tag Date", style="bright_cyan")
         table.add_column("SHA", style="green")
         table.add_column("Commit Date", style="white")
         table.add_column("Commits", style="yellow")
@@ -150,36 +134,32 @@ def display_minor_status(minor_version: str, format_type: str = "table") -> None
     else:
         console.print("[yellow]No micro releases found[/yellow]")
 
-    # Check if there's a newer minor in the same major before showing PRs
-    latest_minor = get_latest_minor_in_major(minor_version)
-
     # Get enriched PRs with merge dates
     enriched_prs = minor.get_prs()
     if enriched_prs:
         merged_count = sum(1 for pr in enriched_prs if pr.is_merged)
         open_count = len(enriched_prs) - merged_count
-        major = minor_version.split(".")[0]
 
-        if latest_minor:
-            # There's a newer minor - redirect user
+        # Apply limit if specified
+        display_prs = enriched_prs
+        if limit is not None and limit > 0:
+            display_prs = enriched_prs[:limit]
             console.print(
-                f"\n[yellow]{len(enriched_prs)} 🍒 targeting v{major}.0 are for {latest_minor} (latest minor)[/yellow]"
+                f"\n[bold]PRs to Process ({len(display_prs)} of {len(enriched_prs)} shown):[/bold]"
             )
-            console.print(f"[dim]Run `ct status {latest_minor}` to view the details[/dim]")
         else:
-            # This is the latest minor - show the PRs
             console.print(f"\n[bold]PRs to Process ({len(enriched_prs)} total):[/bold]")
 
-            # Convert enriched PullRequest objects back to dict for table
-            enriched_prs_data = [pr.to_dict() for pr in enriched_prs]
+        # Convert enriched PullRequest objects back to dict for table
+        enriched_prs_data = [pr.to_dict() for pr in display_prs]
 
-            # Create and display PRs table using reusable function
-            pr_table = create_pr_table(enriched_prs_data, f"PRs Labeled for {minor_version}")
-            console.print(pr_table)
+        # Create and display PRs table using reusable function
+        pr_table = create_pr_table(enriched_prs_data, f"PRs Labeled for {minor_version}")
+        console.print(pr_table)
 
-            # Summary
-            console.print("\n[bold]Summary:[/bold]")
-            console.print(f"├── Merged PRs ready for cherry-pick: {merged_count}")
-            console.print(f"└── Open PRs needing merge: {open_count}")
+        # Summary
+        console.print("\n[bold]Summary:[/bold]")
+        console.print(f"├── Merged PRs ready for cherry-pick: {merged_count}")
+        console.print(f"└── Open PRs needing merge: {open_count}")
     else:
         console.print(f"\n[green]No pending PRs for {minor_version}[/green]")
