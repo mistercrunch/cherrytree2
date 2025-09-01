@@ -558,106 +558,155 @@ class GitInterface:
                 "lines_changed": 0,
             }
 
-    def _analyze_file_conflict(self, repo, parent_commit, cherry_commit, target_commit, file_path):
-        """Analyze if a specific file will have conflicts when cherry-picked."""
-        try:
-            # Get file content at different points
-            parent_blob = None
-            cherry_blob = None
-            target_blob = None
+    def analyze_cherry_pick_conflicts_detailed(
+        self,
+        target_branch: str,
+        commit_sha: str,
+        head_sha: str,
+        depth: int = 0,
+        max_depth: int = 3,
+        visited: set = None,
+        dependency_chain: list = None,
+        verbose: bool = False,
+    ) -> Dict[str, Any]:
+        """
+        Enhanced cherry-pick conflict analysis with recursion support for dependency discovery.
 
-            try:
-                parent_blob = parent_commit.tree[file_path]
-            except KeyError:
-                pass  # File didn't exist in parent
+        This method provides detailed conflict analysis using full merge-tree output (without --name-only)
+        to extract precise conflict information including:
+        - Exact line counts and conflict regions
+        - Git blame attribution for conflicted areas
+        - File content stage analysis (base/target/cherry versions)
+        - Recursion-ready design for future dependency chain analysis
 
-            try:
-                cherry_blob = cherry_commit.tree[file_path]
-            except KeyError:
-                pass  # File doesn't exist in cherry commit (deleted)
+        Recursion parameters support future dependency analysis:
+        - depth/max_depth: Control recursion depth for dependency discovery
+        - visited: Prevent analyzing the same commit multiple times
+        - dependency_chain: Track the path of required commits
 
-            try:
-                target_blob = target_commit.tree[file_path]
-            except KeyError:
-                pass  # File doesn't exist in target
+        Args:
+            target_branch: Branch to cherry-pick into (e.g., "6.0")
+            commit_sha: Commit to cherry-pick (e.g., "54af1cb2")
+            head_sha: Current HEAD of target branch for tracking progression
+            depth: Current recursion depth (0 for root call)
+            max_depth: Maximum recursion depth to prevent runaway analysis
+            visited: Set of already-analyzed commit SHAs (prevents cycles)
+            dependency_chain: List tracking the dependency path
+            verbose: Show detailed output and git commands
 
-            # Determine conflict type and estimate lines
-            if parent_blob and cherry_blob and target_blob:
-                # All three versions exist - check for content conflicts
-                parent_content = parent_blob.data_stream.read().decode("utf-8", errors="ignore")
-                cherry_content = cherry_blob.data_stream.read().decode("utf-8", errors="ignore")
-                target_content = target_blob.data_stream.read().decode("utf-8", errors="ignore")
+        Returns:
+            Dict with enhanced conflict information including:
+            - precise_conflicts: List of conflicts with exact line ranges
+            - blame_attribution: Commit SHAs and authors for conflicted areas
+            - conflict_regions: Detailed line-by-line conflict mapping
+            - dependency_hints: Potential prerequisite commits (future recursion)
+        """
+        # Initialize recursion tracking if not provided
+        if visited is None:
+            visited = set()
+        if dependency_chain is None:
+            dependency_chain = []
 
-                # Simple heuristic: if target differs from parent AND cherry differs from parent
-                # in potentially overlapping ways, there might be conflicts
-                if target_content != parent_content and cherry_content != parent_content:
-                    # Estimate conflict lines by comparing line counts
-                    parent_lines = len(parent_content.splitlines())
-                    cherry_lines = len(cherry_content.splitlines())
-                    target_lines = len(target_content.splitlines())
-
-                    # Rough estimate of affected lines
-                    max_change = max(
-                        abs(cherry_lines - parent_lines), abs(target_lines - parent_lines)
-                    )
-                    estimated_conflict_lines = min(
-                        max_change, max(cherry_lines, target_lines) // 10
-                    )
-
-                    if estimated_conflict_lines == 0:
-                        estimated_conflict_lines = 1
-
-                    return {
-                        "file": file_path,
-                        "type": "content_conflict",
-                        "conflicted_lines": estimated_conflict_lines,
-                        "conflict_regions": [
-                            {
-                                "start_line": 1,
-                                "line_count": estimated_conflict_lines,
-                                "end_line": estimated_conflict_lines,
-                            }
-                        ],
-                        "region_count": 1,
-                        "description": f"Estimated {estimated_conflict_lines} conflicting lines",
-                    }
-
-            elif cherry_blob and target_blob and not parent_blob:
-                # File was added in both branches - likely conflict
-                return {
-                    "file": file_path,
-                    "type": "add_add_conflict",
-                    "conflicted_lines": len(
-                        cherry_blob.data_stream.read().decode("utf-8", errors="ignore").splitlines()
-                    ),
-                    "conflict_regions": [{"start_line": 1, "line_count": 10, "end_line": 10}],
-                    "region_count": 1,
-                    "description": "File added in both branches",
-                }
-
-            elif not cherry_blob and target_blob:
-                # File deleted in cherry but exists in target
-                return {
-                    "file": file_path,
-                    "type": "delete_modify_conflict",
-                    "conflicted_lines": 1,
-                    "conflict_regions": [{"start_line": 1, "line_count": 1, "end_line": 1}],
-                    "region_count": 1,
-                    "description": "File deleted in cherry but modified in target",
-                }
-
-            # No conflict detected
-            return None
-
-        except Exception:
-            # Error analyzing file - assume potential conflict
+        # Check recursion limits
+        if depth > max_depth:
             return {
-                "file": file_path,
-                "type": "analysis_error",
-                "conflicted_lines": 1,
-                "conflict_regions": [{"start_line": 1, "line_count": 1, "end_line": 1}],
-                "region_count": 1,
-                "description": "Unable to analyze file",
+                "commit_sha": commit_sha[:8],
+                "target_branch": target_branch,
+                "error": f"Maximum recursion depth ({max_depth}) exceeded",
+                "complexity": "too_deep",
+                "depth": depth,
+                "visited_count": len(visited),
+            }
+
+        # Check for cycles
+        if commit_sha in visited:
+            return {
+                "commit_sha": commit_sha[:8],
+                "target_branch": target_branch,
+                "error": "Circular dependency detected",
+                "complexity": "circular",
+                "depth": depth,
+                "dependency_chain": dependency_chain.copy(),
+            }
+
+        # Add to visited set and dependency chain
+        visited.add(commit_sha)
+        current_chain = dependency_chain + [commit_sha]
+
+        try:
+            # Standard validation checks
+            if not self.check_branch_exists(target_branch):
+                raise GitError(f"Branch '{target_branch}' does not exist in this repository")
+            if not self.verify_pr_sha_exists(commit_sha):
+                raise GitError(f"Commit '{commit_sha}' does not exist in this repository")
+
+            # Get commit parent for accurate cherry-pick simulation
+            commit_parent = self.run_command(["rev-parse", f"{commit_sha}^"])
+
+            if verbose:
+                self.console.print(f"[dim]Detailed analysis for {commit_sha} (depth {depth})[/dim]")
+                self.console.print(f"[dim]Commit parent: {commit_parent}[/dim]")
+                self.console.print(f"[dim]Dependency chain: {' → '.join(current_chain)}[/dim]")
+
+            # Run detailed merge-tree (without --name-only) for full stage information
+            merge_tree_cmd = [
+                "merge-tree",
+                "--write-tree",
+                "--messages",
+                f"--merge-base={commit_parent}",
+                target_branch,
+                commit_sha,
+            ]
+
+            if verbose:
+                cmd_str = f"git {' '.join(merge_tree_cmd)}"
+                self.console.print(f"[dim cyan]Running: {cmd_str}[/dim cyan]")
+
+            merge_tree_output = self.run_command_binary_safe(merge_tree_cmd, allow_failure=True)
+
+            # Parse detailed stage information
+            stage_info = self._parse_detailed_merge_tree_output(merge_tree_output, verbose)
+
+            # Extract tree OID for conflict content analysis
+            tree_oid = stage_info.get("tree_oid", "")
+
+            # For each conflicted file, get precise conflict analysis with actual content
+            precise_conflicts = []
+            for file_path, stages in stage_info["file_stages"].items():
+                file_analysis = self._analyze_file_stages_with_content(
+                    file_path, stages, target_branch, tree_oid, commit_sha, verbose
+                )
+                precise_conflicts.append(file_analysis)
+
+            # Build comprehensive result
+            result = {
+                "commit_sha": commit_sha[:8],
+                "target_branch": target_branch,
+                "head_sha": head_sha,
+                "depth": depth,
+                "max_depth": max_depth,
+                "dependency_chain": current_chain,
+                "visited_commits": list(visited),
+                "has_conflicts": len(precise_conflicts) > 0,
+                "conflict_count": len(precise_conflicts),
+                "precise_conflicts": precise_conflicts,
+                "stage_info": stage_info,
+                "complexity": self._assess_detailed_complexity(precise_conflicts),
+                # Future recursion fields
+                "dependency_hints": [],  # Will be populated by future dependency analysis
+                "prerequisite_commits": [],  # Commits that should be cherry-picked first
+            }
+
+            return result
+
+        except Exception as e:
+            return {
+                "commit_sha": commit_sha[:8],
+                "target_branch": target_branch,
+                "error": str(e),
+                "complexity": "error",
+                "depth": depth,
+                "dependency_chain": current_chain,
             }
 
     def _get_file_blame_info(self, repo, target_commit, file_path, max_commits=3):
@@ -997,6 +1046,633 @@ class GitInterface:
             "has_conflicts": len(conflicts) > 0,
             "informational_messages": informational_messages,
         }
+
+    def _parse_detailed_merge_tree_output(
+        self, merge_tree_output: str, verbose: bool = False
+    ) -> Dict[str, Any]:
+        """Parse detailed merge-tree output (without --name-only) to extract stage information."""
+        if not merge_tree_output.strip():
+            return {"file_stages": {}, "messages": [], "tree_oid": ""}
+
+        lines = merge_tree_output.strip().split("\n")
+        if not lines:
+            return {"file_stages": {}, "messages": [], "tree_oid": ""}
+
+        # First line is the tree OID
+        tree_oid = lines[0] if lines else ""
+
+        file_stages = {}  # file_path -> {stage1: sha, stage2: sha, stage3: sha, mode: mode}
+        messages = []
+        current_section = "stages"
+
+        for _, line in enumerate(lines[1:], 1):  # Skip tree OID line
+            if not line.strip():
+                # Empty line separates sections
+                current_section = "messages"
+                continue
+
+            if current_section == "stages":
+                # Parse stage line: "100644 <sha> <stage> <filepath>"
+                parts = line.strip().split("\t")
+                if len(parts) >= 2:
+                    mode_sha_stage = parts[0].split()
+                    file_path = parts[1]
+
+                    if len(mode_sha_stage) >= 3:
+                        mode, sha, stage = mode_sha_stage[0], mode_sha_stage[1], mode_sha_stage[2]
+
+                        if file_path not in file_stages:
+                            file_stages[file_path] = {"mode": mode}
+
+                        file_stages[file_path][f"stage{stage}"] = sha
+
+            elif current_section == "messages":
+                messages.append(line)
+
+        if verbose and hasattr(self, "console") and self.console:
+            self.console.print(
+                f"[dim]Detailed parsing found: {len(file_stages)} conflicted files[/dim]"
+            )
+            for file_path, stages in file_stages.items():
+                stage_count = len([k for k in stages.keys() if k.startswith("stage")])
+                self.console.print(f"[dim]  {file_path}: {stage_count} stages[/dim]")
+
+        return {"file_stages": file_stages, "messages": messages, "tree_oid": tree_oid}
+
+    def _analyze_file_stages_with_content(
+        self,
+        file_path: str,
+        stages: Dict[str, str],
+        target_branch: str,
+        tree_oid: str,
+        commit_sha: str,
+        verbose: bool = False,
+    ) -> Dict[str, Any]:
+        """
+        Analyze file conflicts using actual conflict content from merge-tree result.
+
+        This method:
+        1. Gets the actual conflict content from the tree object (with conflict markers)
+        2. Parses conflict sections to find exact line ranges
+        3. Runs git blame on specific conflict ranges to get precise conflicting SHAs
+        """
+        try:
+            if verbose and hasattr(self, "console") and self.console:
+                self.console.print(f"[dim]Analyzing conflict content for {file_path}[/dim]")
+
+            # Get actual conflict content from the merge result tree
+            conflict_content = ""
+            if tree_oid:
+                try:
+                    conflict_content = self.run_command(["show", f"{tree_oid}:{file_path}"])
+                except GitError:
+                    if verbose:
+                        self.console.print(
+                            f"[dim yellow]  Could not get conflict content from tree {tree_oid}[/dim yellow]"
+                        )
+
+            # Parse conflict markers to find exact conflict sections
+            conflict_sections = self._parse_conflict_markers(conflict_content, verbose)
+
+            # Get stage content for comparison
+            stage_contents = {}
+            stage_line_counts = {}
+            for stage_key, sha in stages.items():
+                if stage_key.startswith("stage") and sha:
+                    try:
+                        content = self.run_command(["cat-file", "-p", sha])
+                        stage_contents[stage_key] = content
+                        stage_line_counts[stage_key] = content.count("\n")
+                    except GitError:
+                        stage_contents[stage_key] = ""
+                        stage_line_counts[stage_key] = 0
+
+            # For each conflict section, get blame attribution from BOTH sides of the conflict
+            blame_attribution = []
+            for section in conflict_sections:
+                start_line = section.get("start_line", 1)
+                end_line = section.get("end_line", 1)
+
+                # Get blame for target branch (what we're conflicting WITH)
+                target_blame = self.get_blame_details(
+                    target_branch, file_path, start_line, end_line, verbose
+                )
+                for blame in target_blame:
+                    blame["conflict_side"] = "target_branch"
+                    blame["branch_name"] = target_branch
+                blame_attribution.extend(target_blame)
+
+                # Get blame for cherry-pick commit (what we're trying to APPLY)
+                cherry_blame = self.get_blame_details(
+                    commit_sha, file_path, start_line, end_line, verbose
+                )
+                for blame in cherry_blame:
+                    blame["conflict_side"] = "cherry_pick"
+                    blame["branch_name"] = commit_sha[:8]
+                blame_attribution.extend(cherry_blame)
+
+            # Calculate total conflicted lines from actual sections
+            total_conflicted_lines = sum(
+                section.get("line_count", 0) for section in conflict_sections
+            )
+
+            if verbose and hasattr(self, "console") and self.console:
+                self.console.print(
+                    f"[dim]  Found {len(conflict_sections)} conflict sections with {total_conflicted_lines} total conflicted lines[/dim]"
+                )
+                self.console.print(
+                    f"[dim]  Blame attribution entries: {len(blame_attribution)}[/dim]"
+                )
+                for blame in blame_attribution[:2]:
+                    side = blame.get("conflict_side", "unknown")
+                    sha = blame.get("sha", "unknown")
+                    author = blame.get("author", "unknown")
+                    self.console.print(f"[dim]    {side}: {sha} ({author})[/dim]")
+
+            return {
+                "file": file_path,
+                "mode": stages.get("mode", "100644"),
+                "stage_shas": {k: v for k, v in stages.items() if k.startswith("stage")},
+                "line_counts": stage_line_counts,
+                "conflict_sections": conflict_sections,
+                "conflicted_lines": total_conflicted_lines,
+                "blame_attribution": blame_attribution,
+                "conflict_content": conflict_content
+                if verbose
+                else "",  # Include full content only if verbose
+                "conflict_type": "content" if conflict_sections else "none",
+            }
+
+        except Exception as e:
+            if verbose and hasattr(self, "console") and self.console:
+                self.console.print(f"[dim red]  Error analyzing {file_path}: {str(e)}[/dim red]")
+            return {"file": file_path, "error": str(e), "conflict_type": "analysis_error"}
+
+    def _assess_detailed_complexity(self, precise_conflicts: List[Dict[str, Any]]) -> str:
+        """Assess complexity based on detailed conflict analysis."""
+        if not precise_conflicts:
+            return "clean"
+
+        total_conflicted_lines = sum(
+            conflict.get("conflicted_lines", 0) for conflict in precise_conflicts
+        )
+
+        file_count = len(precise_conflicts)
+
+        # Enhanced complexity assessment using precise metrics
+        if file_count >= 10 or total_conflicted_lines >= 200:
+            return "complex"
+        elif file_count >= 3 or total_conflicted_lines >= 50:
+            return "moderate"
+        elif file_count >= 1 or total_conflicted_lines >= 1:
+            return "simple"
+        else:
+            return "clean"
+
+    def _get_blame_for_file(
+        self, file_path: str, target_branch: str, verbose: bool = False
+    ) -> List[Dict[str, Any]]:
+        """
+        Get git blame information for a conflicted file with enhanced SHA analysis.
+
+        For each commit that touched the file, we also analyze the commit's complexity
+        to understand potential dependencies and their scope.
+        """
+        try:
+            # Run git blame to get line-by-line commit attribution
+            blame_output = self.run_command(
+                ["blame", "--line-porcelain", f"{target_branch}", "--", file_path]
+            )
+
+            # Parse blame output to extract unique commits that touched this file
+            blame_commits = {}  # commit_sha -> commit_info
+            current_commit = None
+            current_author = None
+            current_date = None
+
+            for line in blame_output.split("\n"):
+                # In --line-porcelain format, SHA lines are the first word and are 40 hex characters
+                if line and " " in line and not line.startswith("\t"):
+                    parts = line.split(" ")
+                    potential_sha = parts[0]
+                    # Check if it's a valid git SHA (40 hex characters)
+                    if len(potential_sha) == 40 and all(
+                        c in "0123456789abcdef" for c in potential_sha.lower()
+                    ):
+                        current_commit = potential_sha
+                elif line.startswith("author ") and current_commit:
+                    current_author = line[7:]  # Remove 'author ' prefix
+                elif line.startswith("author-time ") and current_commit:
+                    # Parse unix timestamp
+                    try:
+                        import datetime
+
+                        timestamp = int(line[12:])
+                        current_date = datetime.datetime.fromtimestamp(timestamp).isoformat()
+                    except (ValueError, OSError):
+                        current_date = "unknown"
+                elif line.startswith("\t") and current_commit:
+                    # This is a content line, initialize or increment count
+                    if current_commit not in blame_commits:
+                        blame_commits[current_commit] = {
+                            "sha": current_commit[:8],
+                            "full_sha": current_commit,
+                            "author": current_author or "unknown",
+                            "date": current_date or "unknown",
+                            "line_count": 0,
+                        }
+                    blame_commits[current_commit]["line_count"] += 1
+
+            # For each significant commit, analyze its complexity
+            enhanced_commits = []
+            for commit_info in blame_commits.values():
+                if commit_info["line_count"] >= 5:  # Only analyze commits with significant impact
+                    try:
+                        # Get complexity analysis for this commit
+                        sha_analysis = self.analyze_sha(commit_info["full_sha"], verbose=False)
+
+                        # Merge blame info with complexity analysis
+                        enhanced_info = commit_info.copy()
+                        enhanced_info.update(
+                            {
+                                "files_touched": sha_analysis.get("files_touched", 0),
+                                "total_lines_changed": sha_analysis.get("total_lines_changed", 0),
+                                "complexity": sha_analysis.get("complexity", "unknown"),
+                                "pr_number": sha_analysis.get("commit_info", {}).get("pr_number"),
+                            }
+                        )
+                        enhanced_commits.append(enhanced_info)
+                    except Exception:
+                        # If SHA analysis fails, keep basic blame info
+                        enhanced_commits.append(commit_info)
+                else:
+                    # Keep smaller commits without detailed analysis
+                    enhanced_commits.append(commit_info)
+
+            # Sort by impact (line count in this file + overall complexity)
+            def impact_score(commit):
+                complexity_weight = {
+                    "complex": 100,
+                    "moderate": 50,
+                    "simple": 10,
+                    "minimal": 1,
+                }.get(commit.get("complexity", "minimal"), 1)
+                return commit["line_count"] * 10 + complexity_weight
+
+            enhanced_commits.sort(key=impact_score, reverse=True)
+
+            # Limit to top 5 commits for relevance
+            result = enhanced_commits[:5]
+
+            if verbose and hasattr(self, "console") and self.console:
+                self.console.print(f"[dim]Found {len(result)} contributors to {file_path}[/dim]")
+                for commit in result[:3]:
+                    complexity = commit.get("complexity", "unknown")
+                    files = commit.get("files_touched", 0)
+                    self.console.print(f"[dim]  {commit['sha']}: {complexity} ({files}f)[/dim]")
+
+            return result
+
+        except GitError:
+            # File might not exist in target branch or other git error
+            return []
+        except Exception:
+            # Parsing error or other issue
+            return []
+
+    def _parse_conflict_markers(
+        self, conflict_content: str, verbose: bool = False
+    ) -> List[Dict[str, Any]]:
+        """
+        Parse conflict markers in file content to find exact conflict sections.
+
+        Looks for patterns like:
+        <<<<<<< 6.0
+        target content
+        =======
+        cherry content
+        >>>>>>> 54af1cb2
+
+        Returns list of conflict sections with start/end line numbers.
+        """
+        if not conflict_content:
+            return []
+
+        lines = conflict_content.split("\n")
+        conflict_sections = []
+        current_section = None
+
+        for i, line in enumerate(lines, 1):  # 1-based line numbers
+            if line.startswith("<<<<<<<"):
+                # Start of conflict section
+                current_section = {
+                    "start_line": i,
+                    "target_start": i + 1,
+                    "target_content": [],
+                    "cherry_content": [],
+                    "type": "content_conflict",
+                }
+            elif line.startswith("=======") and current_section:
+                # Switch from target to cherry content
+                current_section["target_end"] = i - 1
+                current_section["cherry_start"] = i + 1
+            elif line.startswith(">>>>>>>") and current_section:
+                # End of conflict section
+                current_section["cherry_end"] = i - 1
+                current_section["end_line"] = i
+                current_section["line_count"] = len(current_section["target_content"]) + len(
+                    current_section["cherry_content"]
+                )
+                conflict_sections.append(current_section)
+                current_section = None
+            elif current_section:
+                # Content line within conflict section
+                if "cherry_start" not in current_section:
+                    # We're in target content
+                    current_section["target_content"].append(line)
+                else:
+                    # We're in cherry content
+                    current_section["cherry_content"].append(line)
+
+        if verbose and hasattr(self, "console") and self.console:
+            total_lines = sum(section["line_count"] for section in conflict_sections)
+            self.console.print(
+                f"[dim]  Parsed {len(conflict_sections)} conflict sections, {total_lines} conflicted lines total[/dim]"
+            )
+
+        return conflict_sections
+
+    def get_blame_details(
+        self, sha: str, file_path: str, line_from: int, line_to: int, verbose: bool = False
+    ) -> List[Dict[str, Any]]:
+        """
+        Get git blame information for specific line range with commit complexity analysis.
+
+        Args:
+            sha: Commit SHA or branch name to blame against
+            file_path: File to analyze
+            line_from: Start line number (1-based)
+            line_to: End line number (1-based)
+            verbose: Show detailed output
+
+        Returns:
+            List of commits that touched the specified line range, with complexity analysis
+        """
+        try:
+            if verbose and hasattr(self, "console") and self.console:
+                self.console.print(
+                    f"[dim]Getting blame for {file_path} lines {line_from}-{line_to}[/dim]"
+                )
+
+            # Run git blame with line range
+            blame_output = self.run_command(
+                ["blame", "--line-porcelain", f"-L{line_from},{line_to}", sha, "--", file_path]
+            )
+
+            # Parse blame output for this specific range
+            range_commits = {}
+            current_commit = None
+            lines_processed = 0
+
+            for line in blame_output.split("\n"):
+                lines_processed += 1
+                if verbose and lines_processed <= 5:
+                    self.console.print(f"[dim]      Line {lines_processed}: {repr(line)}[/dim]")
+
+                # SHA line format: "ddeb6124298995f8e327e5789720d9208ff8d3da 115 115 1"
+                if line and " " in line and not line.startswith("\t"):
+                    parts = line.split(" ")
+                    potential_sha = parts[0]
+                    if len(potential_sha) == 40 and all(
+                        c in "0123456789abcdef" for c in potential_sha.lower()
+                    ):
+                        current_commit = potential_sha
+                        if verbose:
+                            self.console.print(
+                                f"[dim]      Found commit: {current_commit[:8]}[/dim]"
+                            )
+                elif line.startswith("author ") and current_commit:
+                    author = line[7:]
+                    if current_commit not in range_commits:
+                        range_commits[current_commit] = {
+                            "sha": current_commit[:8],
+                            "full_sha": current_commit,
+                            "author": author,
+                            "line_range": f"{line_from}-{line_to}",
+                            "lines_in_range": 0,
+                        }
+                        if verbose:
+                            self.console.print(
+                                f"[dim]      Added commit {current_commit[:8]}: {author}[/dim]"
+                            )
+                elif line.startswith("\t") and current_commit:
+                    # Content line - increment count for this commit in this range
+                    if current_commit in range_commits:
+                        range_commits[current_commit]["lines_in_range"] += 1
+                        if verbose and range_commits[current_commit]["lines_in_range"] <= 3:
+                            self.console.print(
+                                f"[dim]      Content line for {current_commit[:8]}: {line.strip()[:30]}...[/dim]"
+                            )
+                    elif verbose:
+                        self.console.print(
+                            f"[dim]      Content line but no commit in range_commits: {current_commit[:8] if current_commit else 'None'}[/dim]"
+                        )
+
+            if verbose and hasattr(self, "console") and self.console:
+                self.console.print(
+                    f"[dim]  Final range_commits dict: {len(range_commits)} entries[/dim]"
+                )
+                for sha, info in range_commits.items():
+                    self.console.print(
+                        f"[dim]    {sha[:8]}: {info.get('author', 'unknown')} ({info.get('lines_in_range', 0)} lines)[/dim]"
+                    )
+
+            # Enhance with complexity analysis for significant commits
+            enhanced_commits = []
+            for commit_info in range_commits.values():
+                if verbose:
+                    lines_in_range = commit_info.get("lines_in_range", 0)
+                    full_sha = commit_info.get("full_sha", "unknown")
+                    self.console.print(
+                        f"[dim]      Processing commit {full_sha[:8]} ({lines_in_range} lines)[/dim]"
+                    )
+
+                if (
+                    commit_info["lines_in_range"] >= 1
+                ):  # Analyze all commits that touch conflict area
+                    try:
+                        sha_analysis = self.analyze_sha(commit_info["full_sha"], verbose=False)
+                        enhanced_info = commit_info.copy()
+                        enhanced_info.update(
+                            {
+                                "files_touched": sha_analysis.get("files_touched", 0),
+                                "total_lines_changed": sha_analysis.get("total_lines_changed", 0),
+                                "complexity": sha_analysis.get("complexity", "unknown"),
+                                "pr_number": sha_analysis.get("commit_info", {}).get("pr_number"),
+                            }
+                        )
+                        enhanced_commits.append(enhanced_info)
+                        if verbose:
+                            complexity = enhanced_info.get("complexity", "unknown")
+                            self.console.print(f"[dim]        → Enhanced: {complexity}[/dim]")
+                    except Exception as e:
+                        if verbose:
+                            self.console.print(
+                                f"[dim red]        → Enhancement failed: {str(e)}[/dim red]"
+                            )
+                        enhanced_commits.append(commit_info)
+                else:
+                    enhanced_commits.append(commit_info)
+
+            # Sort by lines in range (most impactful first)
+            enhanced_commits.sort(key=lambda x: x["lines_in_range"], reverse=True)
+
+            if verbose and hasattr(self, "console") and self.console:
+                self.console.print(f"[dim]  Raw range_commits parsed: {len(range_commits)}[/dim]")
+                for commit_sha, info in list(range_commits.items())[:3]:
+                    lines_in_range = info.get("lines_in_range", 0)
+                    author = info.get("author", "unknown")
+                    full_sha = info.get("full_sha", "unknown")
+                    self.console.print(
+                        f"[dim]    {commit_sha}: {author} (full: {full_sha[:12]}..., {lines_in_range} lines)[/dim]"
+                    )
+
+                self.console.print(
+                    f"[dim]  Enhanced commits after analysis: {len(enhanced_commits)}[/dim]"
+                )
+                for commit in enhanced_commits[:2]:
+                    self.console.print(
+                        f"[dim]    {commit.get('sha', 'unknown')}: {commit.get('complexity', 'unknown')}[/dim]"
+                    )
+
+            return enhanced_commits
+
+        except GitError:
+            return []
+        except Exception:
+            return []
+
+    def _get_blame_for_line_range(
+        self,
+        file_path: str,
+        target_branch: str,
+        start_line: int,
+        end_line: int,
+        verbose: bool = False,
+    ) -> List[Dict[str, Any]]:
+        """Legacy wrapper - use get_blame_details instead."""
+        return self.get_blame_details(target_branch, file_path, start_line, end_line, verbose)
+
+    def analyze_sha(self, commit_sha: str, verbose: bool = False) -> Dict[str, Any]:
+        """
+        Analyze a specific commit SHA to determine its complexity and scope.
+
+        Returns information about:
+        - Files touched by the commit
+        - Lines added/removed/modified
+        - Commit metadata (author, date, message)
+        - Complexity classification
+
+        This is useful for dependency analysis - understanding how "big" a commit is
+        helps assess the risk of cherry-picking it as a dependency.
+
+        Args:
+            commit_sha: The commit to analyze
+            verbose: Show detailed output
+
+        Returns:
+            Dict with commit complexity information including:
+            - files_touched: Number of files modified
+            - lines_added/removed/changed: Line change metrics
+            - complexity: simple/moderate/complex classification
+            - commit_info: Author, date, message metadata
+        """
+        try:
+            if not self.verify_pr_sha_exists(commit_sha):
+                raise GitError(f"Commit '{commit_sha}' does not exist in this repository")
+
+            from git import Repo
+
+            repo = Repo(self.repo_path)
+            commit = repo.commit(commit_sha)
+
+            if verbose and hasattr(self, "console") and self.console:
+                self.console.print(f"[dim]Analyzing commit complexity for {commit_sha}[/dim]")
+
+            # Get commit diff statistics
+            files_touched = 0
+            lines_added = 0
+            lines_removed = 0
+
+            if len(commit.parents) > 0:
+                parent = commit.parents[0]
+                diff = parent.diff(commit, create_patch=True)
+                files_touched = len(diff)
+
+                # Count lines added/removed
+                for diff_item in diff:
+                    try:
+                        lines_changed = self._count_diff_lines_safely(diff_item)
+                        # Rough estimate of added vs removed (could be enhanced)
+                        if diff_item.new_file:
+                            lines_added += lines_changed
+                        elif diff_item.deleted_file:
+                            lines_removed += lines_changed
+                        else:
+                            # Modified file - split the difference
+                            lines_added += lines_changed // 2
+                            lines_removed += lines_changed // 2
+                    except Exception:
+                        # Skip problematic diff items
+                        lines_added += 10  # Rough estimate
+
+            total_lines_changed = lines_added + lines_removed
+
+            # Classify complexity
+            if files_touched >= 20 or total_lines_changed >= 500:
+                complexity = "complex"
+            elif files_touched >= 5 or total_lines_changed >= 100:
+                complexity = "moderate"
+            elif files_touched >= 1 or total_lines_changed >= 1:
+                complexity = "simple"
+            else:
+                complexity = "minimal"
+
+            # Extract PR number from commit message
+            pr_matches = re.findall(r"#(\d+)", commit.message)
+            pr_number = int(pr_matches[-1]) if pr_matches else None
+
+            result = {
+                "commit_sha": commit_sha[:8],
+                "full_commit_sha": commit.hexsha,
+                "files_touched": files_touched,
+                "lines_added": lines_added,
+                "lines_removed": lines_removed,
+                "total_lines_changed": total_lines_changed,
+                "complexity": complexity,
+                "commit_info": {
+                    "author": str(commit.author),
+                    "date": commit.committed_datetime.isoformat(),
+                    "message": commit.message.strip(),
+                    "pr_number": pr_number,
+                },
+            }
+
+            if verbose and hasattr(self, "console") and self.console:
+                self.console.print(
+                    f"[dim]Complexity: {complexity} ({files_touched}f, {total_lines_changed}l)[/dim]"
+                )
+
+            return result
+
+        except Exception as e:
+            return {
+                "commit_sha": commit_sha[:8],
+                "error": str(e),
+                "complexity": "error",
+                "files_touched": 0,
+                "total_lines_changed": 0,
+            }
 
     def _parse_merge_tree_output(self, merge_tree_output: str) -> Dict[str, Any]:
         """Parse git merge-tree output to extract conflict information."""

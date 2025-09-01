@@ -172,6 +172,12 @@ def analyze_next(
     verbose: bool = typer.Option(
         False, "--verbose", "-v", help="Show raw merge-tree output for debugging"
     ),
+    detailed: bool = typer.Option(
+        False,
+        "--detailed",
+        "-d",
+        help="Use detailed analysis with precise line counts and git blame attribution",
+    ),
 ) -> None:
     """Analyze potential conflicts for the next PR to cherry-pick."""
     from .conflict_analysis import analyze_next_pr_conflicts
@@ -180,7 +186,7 @@ def analyze_next(
     if not minor_version:
         minor_version = ensure_release_branch(console)
 
-    analyze_next_pr_conflicts(minor_version, format_type, verbose)
+    analyze_next_pr_conflicts(minor_version, format_type, verbose, detailed)
 
 
 @app.command("chain")

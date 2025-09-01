@@ -95,7 +95,7 @@ def analyze_all_pr_conflicts(
 
 
 def analyze_next_pr_conflicts(
-    minor_version: str, format_type: str = "table", verbose: bool = False
+    minor_version: str, format_type: str = "table", verbose: bool = False, detailed: bool = False
 ) -> None:
     """Analyze potential conflicts for the next PR to cherry-pick."""
     console = Console()
@@ -127,18 +127,30 @@ def analyze_next_pr_conflicts(
         git = GitInterface(console=console)
 
         # Analyze conflicts
+        analysis_type = "detailed" if detailed else "standard"
         console.print(
-            f"[cyan]Analyzing conflicts for cherry-pick of PR #{next_pr.pr_number}...[/cyan]"
+            f"[cyan]Running {analysis_type} conflict analysis for PR #{next_pr.pr_number}...[/cyan]"
         )
-        analysis = git.analyze_cherry_pick_conflicts(
-            minor_version, next_pr.master_sha, verbose=verbose
-        )
+
+        if detailed:
+            # Get current branch HEAD for detailed analysis
+            branch_head = git.run_command(["rev-parse", minor_version])
+            analysis = git.analyze_cherry_pick_conflicts_detailed(
+                minor_version, next_pr.master_sha, branch_head, verbose=verbose
+            )
+        else:
+            analysis = git.analyze_cherry_pick_conflicts(
+                minor_version, next_pr.master_sha, verbose=verbose
+            )
 
         # Display results
         if format_type == "json":
             _display_json_output(analysis, next_pr)
         else:
-            _display_table_output(analysis, next_pr, console)
+            if detailed:
+                _display_detailed_analysis(analysis, next_pr, console, verbose)
+            else:
+                _display_table_output(analysis, next_pr, console)
 
     except Exception as e:
         console.print(f"[red]Error analyzing conflicts: {e}[/red]")
@@ -634,6 +646,187 @@ def _display_json_output(analysis: Dict[str, Any], next_pr: Any) -> None:
         "analysis": analysis,
     }
     print(json.dumps(output, indent=2))
+
+
+def _display_detailed_analysis(
+    analysis: Dict[str, Any], next_pr: Any, console: Console, verbose: bool = False
+) -> None:
+    """Display detailed conflict analysis with precise line counts and blame attribution."""
+
+    # Header table with basic info
+    table = Table(title=f"Detailed Cherry-Pick Analysis: PR #{next_pr.pr_number}")
+    table.add_column("Property", style="bold")
+    table.add_column("Value", style="")
+
+    # Basic PR info with clickable links
+    pr_link = f"[link=https://github.com/apache/superset/pull/{next_pr.pr_number}]#{next_pr.pr_number}[/link]"
+    sha_link = f"[link=https://github.com/apache/superset/commit/{analysis['commit_sha']}]{analysis['commit_sha']}[/link]"
+
+    table.add_row("PR Number", pr_link)
+    table.add_row("Title", next_pr.title)
+    table.add_row("Author", next_pr.author)
+    table.add_row("Commit SHA", sha_link)
+    table.add_row("Target Branch", analysis["target_branch"])
+
+    # Recursion info
+    if "depth" in analysis:
+        table.add_row("Analysis Depth", str(analysis["depth"]))
+    if "dependency_chain" in analysis:
+        chain_display = " → ".join(analysis["dependency_chain"][-3:])  # Show last 3
+        table.add_row("Dependency Chain", chain_display)
+
+    # Overall status
+    if analysis.get("error"):
+        table.add_row("Status", f"[red]Error: {analysis['error']}[/red]")
+    elif analysis.get("has_conflicts"):
+        complexity = analysis.get("complexity", "unknown")
+        color = {"simple": "yellow", "moderate": "orange3", "complex": "red"}.get(complexity, "red")
+        table.add_row(
+            "Status", f"[{color}]🚨 {analysis['conflict_count']} conflicts ({complexity})[/{color}]"
+        )
+    else:
+        table.add_row("Status", "[green]✅ Clean cherry-pick[/green]")
+
+    console.print(table)
+
+    # Detailed conflict breakdown with sections
+    if analysis.get("has_conflicts") and analysis.get("precise_conflicts"):
+        console.print()
+
+        for i, conflict in enumerate(analysis["precise_conflicts"], 1):
+            console.print(f"[bold]📁 Conflict {i}: {conflict['file']}[/bold]")
+
+            # Line count information
+            line_counts = conflict.get("line_counts", {})
+            conflicted_lines = conflict.get("conflicted_lines", 0)
+            console.print(
+                f"[dim]File lines - Stage1: {line_counts.get('stage1', 0)}, Stage2: {line_counts.get('stage2', 0)}, Stage3: {line_counts.get('stage3', 0)}[/dim]"
+            )
+            console.print(f"[yellow]Total conflicted lines: {conflicted_lines}[/yellow]")
+
+            # Conflict sections breakdown
+            conflict_sections = conflict.get("conflict_sections", [])
+            if conflict_sections:
+                console.print(f"[dim]Conflict sections: {len(conflict_sections)}[/dim]")
+                for j, section in enumerate(conflict_sections, 1):
+                    start_line = section.get("start_line", 0)
+                    end_line = section.get("end_line", 0)
+                    section_lines = section.get("line_count", 0)
+                    console.print(
+                        f"[dim]  Section {j}: lines {start_line}-{end_line} ({section_lines} conflicted)[/dim]"
+                    )
+
+                    # Show target vs cherry content preview
+                    target_content = section.get("target_content", [])
+                    cherry_content = section.get("cherry_content", [])
+                    if target_content or cherry_content:
+                        console.print(
+                            f"[dim]    Target: {len(target_content)} lines, Cherry: {len(cherry_content)} lines[/dim]"
+                        )
+                        # Show first line of each for context
+                        if target_content:
+                            preview = (
+                                target_content[0][:50] + "..."
+                                if len(target_content[0]) > 50
+                                else target_content[0]
+                            )
+                            console.print(f"[dim]    Target preview: {preview}[/dim]")
+                        if cherry_content:
+                            preview = (
+                                cherry_content[0][:50] + "..."
+                                if len(cherry_content[0]) > 50
+                                else cherry_content[0]
+                            )
+                            console.print(f"[dim]    Cherry preview: {preview}[/dim]")
+
+            # Stage SHAs (for deep debugging)
+            stage_shas = conflict.get("stage_shas", {})
+            if stage_shas and verbose:
+                console.print("[dim]Stage SHAs:[/dim]")
+                for stage, sha in stage_shas.items():
+                    console.print(f"[dim]  {stage}: {sha[:8]}[/dim]")
+
+            # Blame attribution for both sides of the conflict
+            blame_attribution = conflict.get("blame_attribution", [])
+            if blame_attribution:
+                console.print("[cyan]🔍 Conflict attribution (both sides):[/cyan]")
+
+                # Group by conflict side
+                target_commits = [
+                    b for b in blame_attribution if b.get("conflict_side") == "target_branch"
+                ]
+                cherry_commits = [
+                    b for b in blame_attribution if b.get("conflict_side") == "cherry_pick"
+                ]
+
+                if target_commits:
+                    console.print(
+                        f"  [yellow]Target branch ({target_commits[0].get('branch_name', 'unknown')}) - what we're conflicting WITH:[/yellow]"
+                    )
+                    for blame in target_commits[:2]:
+                        _display_blame_commit(blame, console)
+
+                if cherry_commits:
+                    console.print(
+                        f"  [green]Cherry-pick commit ({cherry_commits[0].get('branch_name', 'unknown')}) - what we're trying to APPLY:[/green]"
+                    )
+                    for blame in cherry_commits[:2]:
+                        _display_blame_commit(blame, console)
+
+            console.print()
+
+    # Recommendations
+    _display_recommendations(analysis, console)
+
+
+def _display_blame_commit(blame: Dict[str, Any], console: Console) -> None:
+    """Display individual blame commit information with rich context."""
+    sha = blame["sha"]
+    full_sha = blame.get("full_sha", sha)
+    author = blame["author"]
+    line_range = blame.get("line_range", "unknown")
+    lines_in_range = blame.get("lines_in_range", 0)
+    date = blame.get("date", "unknown")
+
+    # Enhanced complexity and context info
+    complexity = blame.get("complexity", "unknown")
+    files_touched = blame.get("files_touched", 0)
+    total_lines_changed = blame.get("total_lines_changed", 0)
+    pr_number = blame.get("pr_number")
+
+    # Format date nicely
+    date_display = date[:10] if len(date) >= 10 else date
+
+    # Create clickable links
+    sha_link = f"[link=https://github.com/apache/superset/commit/{full_sha}]{sha}[/link]"
+    pr_link = (
+        f"[link=https://github.com/apache/superset/pull/{pr_number}]#{pr_number}[/link]"
+        if pr_number
+        else ""
+    )
+
+    complexity_color = {
+        "complex": "red",
+        "moderate": "yellow",
+        "simple": "green",
+        "minimal": "blue",
+    }.get(complexity, "dim")
+    complexity_info = f"[{complexity_color}]{complexity}[/{complexity_color}]"
+
+    # Show main commit info
+    pr_info = f" {pr_link}" if pr_number else ""
+    console.print(f"    📝 {sha_link}: {author}{pr_info}")
+    console.print(f"       ├─ Date: {date_display}")
+    console.print(f"       ├─ Lines {line_range}: {lines_in_range} lines in conflict area")
+    console.print(
+        f"       └─ Commit scope: {complexity_info} ({files_touched} files, {total_lines_changed} lines)"
+    )
+
+    # Show potential dependency context
+    if complexity in ["moderate", "complex"]:
+        console.print("       [yellow]⚠️  Large commit - may have dependencies[/yellow]")
+    elif files_touched > 10:
+        console.print(f"       [yellow]⚠️  Touches many files ({files_touched})[/yellow]")
 
 
 def _display_recommendations(analysis: Dict[str, Any], console: Console) -> None:
