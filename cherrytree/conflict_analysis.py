@@ -813,9 +813,26 @@ def _display_blame_commit(blame: Dict[str, Any], console: Console) -> None:
     }.get(complexity, "dim")
     complexity_info = f"[{complexity_color}]{complexity}[/{complexity_color}]"
 
-    # Show main commit info
+    # Get commit message from analyze_sha results
+    commit_message = ""
+    # The analyze_sha result should be stored in the blame data
+    if hasattr(blame, "get"):
+        # Check if commit_info with message is available
+        for key, value in blame.items():
+            if key == "commit_info" and isinstance(value, dict):
+                full_message = value.get("message", "")
+                commit_message = full_message.split("\n")[0] if full_message else ""
+                break
+
+    # Show main commit info with message
     pr_info = f" {pr_link}" if pr_number else ""
     console.print(f"    📝 {sha_link}: {author}{pr_info}")
+    if commit_message:
+        # Truncate long commit messages for readability
+        message_display = (
+            commit_message[:80] + "..." if len(commit_message) > 80 else commit_message
+        )
+        console.print(f"       ├─ Message: [dim]{message_display}[/dim]")
     console.print(f"       ├─ Date: {date_display}")
     console.print(f"       ├─ Lines {line_range}: {lines_in_range} lines in conflict area")
     console.print(

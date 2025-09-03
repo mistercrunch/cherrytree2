@@ -1299,6 +1299,9 @@ class GitInterface:
                                 "total_lines_changed": sha_analysis.get("total_lines_changed", 0),
                                 "complexity": sha_analysis.get("complexity", "unknown"),
                                 "pr_number": sha_analysis.get("commit_info", {}).get("pr_number"),
+                                "commit_info": sha_analysis.get(
+                                    "commit_info", {}
+                                ),  # Include full commit info with message
                             }
                         )
                         enhanced_commits.append(enhanced_info)
@@ -1436,23 +1439,20 @@ class GitInterface:
 
             for line in blame_output.split("\n"):
                 lines_processed += 1
-                if verbose and lines_processed <= 5:
+                if verbose and lines_processed <= 10:
                     self.console.print(f"[dim]      Line {lines_processed}: {repr(line)}[/dim]")
+                    if line.startswith("author "):
+                        self.console.print(
+                            f"[dim]        → This is an author line! current_commit={current_commit[:8] if current_commit else None}[/dim]"
+                        )
 
-                # SHA line format: "ddeb6124298995f8e327e5789720d9208ff8d3da 115 115 1"
-                if line and " " in line and not line.startswith("\t"):
-                    parts = line.split(" ")
-                    potential_sha = parts[0]
-                    if len(potential_sha) == 40 and all(
-                        c in "0123456789abcdef" for c in potential_sha.lower()
-                    ):
-                        current_commit = potential_sha
-                        if verbose:
-                            self.console.print(
-                                f"[dim]      Found commit: {current_commit[:8]}[/dim]"
-                            )
-                elif line.startswith("author ") and current_commit:
+                # Check author line first (higher priority)
+                if line.startswith("author ") and current_commit:
                     author = line[7:]
+                    if verbose:
+                        self.console.print(
+                            f"[dim]      Processing author line for {current_commit[:8]}: {author}[/dim]"
+                        )
                     if current_commit not in range_commits:
                         range_commits[current_commit] = {
                             "sha": current_commit[:8],
@@ -1463,7 +1463,25 @@ class GitInterface:
                         }
                         if verbose:
                             self.console.print(
-                                f"[dim]      Added commit {current_commit[:8]}: {author}[/dim]"
+                                f"[dim]      ✅ Added commit {current_commit[:8]}: {author}[/dim]"
+                            )
+                # SHA line format: "ddeb6124298995f8e327e5789720d9208ff8d3da 115 115 1"
+                elif (
+                    line
+                    and " " in line
+                    and not line.startswith("\t")
+                    and not line.startswith("author")
+                    and not line.startswith("committer")
+                ):
+                    parts = line.split(" ")
+                    potential_sha = parts[0]
+                    if len(potential_sha) == 40 and all(
+                        c in "0123456789abcdef" for c in potential_sha.lower()
+                    ):
+                        current_commit = potential_sha
+                        if verbose:
+                            self.console.print(
+                                f"[dim]      Found commit: {current_commit[:8]}[/dim]"
                             )
                 elif line.startswith("\t") and current_commit:
                     # Content line - increment count for this commit in this range
@@ -1509,6 +1527,9 @@ class GitInterface:
                                 "total_lines_changed": sha_analysis.get("total_lines_changed", 0),
                                 "complexity": sha_analysis.get("complexity", "unknown"),
                                 "pr_number": sha_analysis.get("commit_info", {}).get("pr_number"),
+                                "commit_info": sha_analysis.get(
+                                    "commit_info", {}
+                                ),  # Include full commit info with message
                             }
                         )
                         enhanced_commits.append(enhanced_info)
